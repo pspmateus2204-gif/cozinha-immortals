@@ -1,4 +1,4 @@
-const CACHE='cozinha-immortals-v11';
+const CACHE='cozinha-immortals-v12';
 const ASSETS=[
   './manifest.webmanifest',
   './immortals-logo.jpg',
