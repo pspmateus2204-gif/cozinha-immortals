@@ -59,11 +59,40 @@
 @media(max-width:980px){.chef-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.chef-grid{grid-template-columns:1fr 1fr}.chef-inputs{grid-template-columns:1fr}}
 
+
+/* V7 — chef do dia visível logo após a escolha do dia */
+.chef-day-box{
+  margin:14px 0 20px;
+  padding:14px;
+  border:2px solid #d99a16;
+  border-radius:15px;
+  background:linear-gradient(180deg,#25190f,#1b120c);
+  box-shadow:0 8px 24px #0005,inset 0 0 0 1px #ffce5c22;
+}
+.chef-day-title{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:10px
+}
+.chef-day-title h2{margin:0;font-size:19px;color:#ffe4aa}
+.chef-day-title .chef-status{font-size:12px}
+.chef-grid.top-chefs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.chef-select{min-height:105px}
+.chef-select .chef-preview{margin-top:4px}
+.chef-select.active:after{
+  content:"SELECIONADO";
+  position:absolute;right:10px;bottom:8px;
+  font-size:9px;font-weight:950;letter-spacing:.06em;color:#ffcf67
+}
+@media(max-width:720px){
+  .chef-grid.top-chefs{grid-template-columns:repeat(2,1fr)}
+  .chef-day-title{align-items:flex-start;flex-direction:column}
+}
+
 </style>
 </head>
 <body>
 <div class="app">
-<header class="hero"><div><div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div><h1>🍳 COZINHA DA IMMORTALS</h1><p>Slayer Legend · Dragon Valley S5 · planejador diário</p></div><span class="version">interface V6 · receitas da comunidade</span><div class="wt-note">PNC DA WT</div></header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
+<header class="hero"><div><div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div><h1>🍳 COZINHA DA IMMORTALS</h1><p>Slayer Legend · Dragon Valley S5 · planejador diário</p></div><span class="version">interface V7 · receitas da comunidade</span><div class="wt-note">PNC DA WT</div></header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
 <nav class="tabs">
 <button class="tab active" data-tab="hoje">Hoje</button><button class="tab" data-tab="receitas">Receitas</button><button class="tab" data-tab="ingredientes">Ingredientes</button><button class="tab" data-tab="historico">Histórico</button><button class="tab" data-tab="fontes">Fontes</button>
 </nav>
@@ -74,6 +103,18 @@
   <button class="day-btn" data-cat="Sobremesa">🍰 Quinta — Sobremesas<small>Dano à Wyvern</small></button>
 </div>
 <select id="dayType"><option>Aperitivo</option><option>Prato principal</option><option>Sobremesa</option></select>
+
+<div class="chef-day-box">
+  <div class="chef-day-title">
+    <h2>👨‍🍳 ESCOLHA O CHEF DO DIA</h2>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="chef-status" id="chefStatus">Nenhum chef selecionado.</div>
+      <button class="btn tiny" id="clearChef">Limpar</button>
+    </div>
+  </div>
+  <p class="helptext">Clique em um chef. Os pratos possíveis e a recomendação serão recalculados usando apenas os ingredientes disponíveis com esse cozinheiro.</p>
+  <div id="chefInventory" class="chef-grid top-chefs"></div>
+</div>
 
 <div class="today-layout">
   <div class="today-main">
@@ -87,12 +128,6 @@
       <div id="regularInventory" class="regular-grid"></div>
     </section>
 
-    <section class="section-block">
-      <div class="section-heading"><h2>👨‍🍳 Escolha o Cozinheiro do Mapa</h2></div>
-      <div class="chef-toolbar"><div class="chef-status" id="chefStatus">Nenhum chef selecionado.</div><button class="btn tiny" id="clearChef">Limpar chef</button></div>
-      <p class="helptext">Selecione o chef disponível no seu mapa. Só os ingredientes desse chef serão considerados nas recomendações de hoje.</p>
-      <div id="chefInventory" class="chef-grid"></div>
-    </section>
 
     <section class="section-block">
       <div class="section-heading"><h2>✨ Itens Especiais</h2></div>
@@ -227,7 +262,7 @@ function renderInventory(){
     const isActive=active===c.name;
     const previews=c.items.map(n=>`<span>${esc(n)}</span>`).join('<span>•</span>');
     const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
-    return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">👨‍🍳 ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div>${inputs}</div>`;
+    return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">👨‍🍳 ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div><div class="chef-hint">${isActive?'Clique novamente nos campos abaixo para informar o estoque.':'Clique para selecionar este chef.'}</div>${inputs}</div>`;
   }).join('');
   chefBox.querySelectorAll('[data-chef]').forEach(card=>card.onclick=e=>{
     if(e.target.closest('input'))return;

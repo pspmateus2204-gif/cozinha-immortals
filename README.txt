@@ -10,3 +10,5 @@ V4: interface principal refeita para seleção rápida por dia, estoque agrupado
 V5: adicionada a frase 'PNC DA WT' no canto direito do cabeçalho.
 
 V6: seleção diária de Chef Cedric/Rosa/Gene/Arwen; somente o chef escolhido expande os ingredientes e entra no cálculo das recomendações.
+
+V7: seletor de chef movido para o topo, imediatamente abaixo da escolha do dia, com destaque visual.
