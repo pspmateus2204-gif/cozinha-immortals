@@ -40,11 +40,30 @@
 @media(max-width:980px){.today-layout{grid-template-columns:1fr}.today-side{position:static}.regular-grid{grid-template-columns:repeat(3,1fr)}.chef-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.day-picker{grid-template-columns:1fr}.day-btn{padding:12px}.regular-grid{grid-template-columns:repeat(2,1fr)}.chef-grid,.special-grid{grid-template-columns:1fr 1fr}.stock-card{min-height:104px}.hero h1{font-size:26px}}
 
+
+/* V6 — seleção real de chef */
+.chef-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.chef-select{border:1px solid #4d5a6c;background:#1e2938;border-radius:12px;padding:13px;min-height:138px;cursor:pointer;transition:.15s ease;position:relative}
+.chef-select:hover{border-color:#6f8098;transform:translateY(-1px)}
+.chef-select.active{border-color:#39b8ff;box-shadow:0 0 0 1px #39b8ff inset,0 7px 20px #0005;background:#18283a}
+.chef-select .chef-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.chef-select .chef-name{font-weight:950;font-size:14px}
+.chef-select .chef-check{width:18px;height:18px;border-radius:50%;border:2px solid #6b788c;display:grid;place-items:center;font-size:11px}
+.chef-select.active .chef-check{background:#ffae16;border-color:#ffae16;color:#1b1207}
+.chef-preview{display:flex;gap:8px;flex-wrap:wrap;color:#dce5f1;font-size:12px;font-weight:800}
+.chef-inputs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px;padding-top:10px;border-top:1px solid #3f5066}
+.chef-mini{display:grid;gap:4px}.chef-mini span{font-size:11px;font-weight:850}.chef-mini small{font-size:9px;color:#9fb0c8}
+.chef-hint{margin-top:7px;font-size:10px;color:#89a1bf;line-height:1.35}
+.chef-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.chef-status{font-size:12px;color:#9fb0c8}.chef-status b{color:#fff}
+@media(max-width:980px){.chef-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.chef-grid{grid-template-columns:1fr 1fr}.chef-inputs{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
 <div class="app">
-<header class="hero"><div><div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div><h1>🍳 COZINHA DA IMMORTALS</h1><p>Slayer Legend · Dragon Valley S5 · planejador diário</p></div><span class="version">interface V5 · receitas da comunidade</span><div class="wt-note">PNC DA WT</div></header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
+<header class="hero"><div><div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div><h1>🍳 COZINHA DA IMMORTALS</h1><p>Slayer Legend · Dragon Valley S5 · planejador diário</p></div><span class="version">interface V6 · receitas da comunidade</span><div class="wt-note">PNC DA WT</div></header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
 <nav class="tabs">
 <button class="tab active" data-tab="hoje">Hoje</button><button class="tab" data-tab="receitas">Receitas</button><button class="tab" data-tab="ingredientes">Ingredientes</button><button class="tab" data-tab="historico">Histórico</button><button class="tab" data-tab="fontes">Fontes</button>
 </nav>
@@ -69,7 +88,9 @@
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>👨‍🍳 Itens do Cozinheiro do Mapa</h2></div>
+      <div class="section-heading"><h2>👨‍🍳 Escolha o Cozinheiro do Mapa</h2></div>
+      <div class="chef-toolbar"><div class="chef-status" id="chefStatus">Nenhum chef selecionado.</div><button class="btn tiny" id="clearChef">Limpar chef</button></div>
+      <p class="helptext">Selecione o chef disponível no seu mapa. Só os ingredientes desse chef serão considerados nas recomendações de hoje.</p>
       <div id="chefInventory" class="chef-grid"></div>
     </section>
 
@@ -150,9 +171,9 @@ const CATS=["Aperitivo","Prato principal","Sobremesa"];
 const KEY='slayer_dv_kitchen_v2';
 const todayKey=()=>{const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${dd}`};
 function autoCategory(){const a=new Date(2026,8,22);a.setHours(0,0,0,0);const d=new Date();d.setHours(0,0,0,0);const diff=Math.round((d-a)/86400000);return CATS[((diff%3)+3)%3]}
-const base={stock:Object.fromEntries(ING.map(i=>[i.name,0])),completed:[],guildByDate:{},history:{},categoryOverride:{},goal:'balanced'};
+const base={stock:Object.fromEntries(ING.map(i=>[i.name,0])),completed:[],guildByDate:{},history:{},categoryOverride:{},selectedChefByDate:{},goal:'balanced'};
 let state;try{state={...base,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{state=structuredClone(base)};
-state.stock={...base.stock,...(state.stock||{})};state.completed=Array.isArray(state.completed)?state.completed:[];state.guildByDate=state.guildByDate||{};state.history=state.history||{};state.categoryOverride=state.categoryOverride||{};
+state.stock={...base.stock,...(state.stock||{})};state.completed=Array.isArray(state.completed)?state.completed:[];state.guildByDate=state.guildByDate||{};state.history=state.history||{};state.categoryOverride=state.categoryOverride||{};state.selectedChefByDate=state.selectedChefByDate||{};
 // Migra a versão anterior, se houver.
 try{const old=JSON.parse(localStorage.getItem('receitasdv_ptbr_v1')||'null');if(old&&state.completed.length===0){state.stock={...state.stock,...(old.stock||{})};state.completed=old.completed||[]}}catch{}
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
@@ -166,11 +187,28 @@ function missing(r){const out=[];for(const [i,n] of Object.entries(counts(r))){c
 function recipeText(r,raw=false){const c=counts(r);return Object.entries(c).map(([i,n])=>raw?`${i} ${n*ING_MAP[i].cost}`:`${n>1?n+'× ':''}${i}`).join(' + ')}
 function guildToday(){return state.guildByDate[todayKey()]||[]}
 function dayType(){return state.categoryOverride[todayKey()]||autoCategory()}
+const CHEFS=[
+  {name:'Cedric',label:'Chef Cedric',items:['Morango','Cana-de-açúcar']},
+  {name:'Rosa',label:'Chef Rosa',items:['Milho','Amendoim']},
+  {name:'Gene',label:'Chef Gene',items:['Camarão','Arroz']},
+  {name:'Arwen',label:'Chef Arwen',items:['Batata','Tomate']}
+];
+const CHEF_ITEM_SOURCE=new Set(CHEFS.map(c=>c.name));
+function selectedChef(){return state.selectedChefByDate[todayKey()]||''}
+function chefCompatible(r){
+  const chef=selectedChef();
+  if(!chef)return false;
+  return r.ingredients.every(i=>{
+    const src=ING_MAP[i]?.source;
+    return !CHEF_ITEM_SOURCE.has(src)||src===chef;
+  });
+}
+
 function isCookedToday(){return !!state.history[todayKey()]}
 function scarcity(r){let s=0;for(const [i,n] of Object.entries(counts(r))){const avail=Math.max(selections(i),.25);s+=(rarityWeight[ING_MAP[i].rarity]||1)*(n/avail)}return s}
 function scoreTuple(r){const fresh=state.completed.includes(r.name)?0:1;const sc=scarcity(r);if(state.goal==='bonus')return [r.bonusPct,fresh,r.emblem,-sc];if(state.goal==='emblem')return [r.emblem,fresh,r.bonusPct,-sc];if(state.goal==='save')return [fresh,-sc,r.bonusPct,r.emblem];return [fresh,r.bonusPct,r.emblem,-sc]}
 function cmp(a,b){const A=scoreTuple(a),B=scoreTuple(b);for(let i=0;i<A.length;i++)if(A[i]!==B[i])return B[i]-A[i];return a.id-b.id}
-function candidates(cat=dayType()){const g=new Set(guildToday());return RECIPES.filter(r=>r.type===cat&&can(r)&&!g.has(r.name)).sort(cmp)}
+function candidates(cat=dayType()){const g=new Set(guildToday());return RECIPES.filter(r=>r.type===cat&&chefCompatible(r)&&can(r)&&!g.has(r.name)).sort(cmp)}
 function best(){return isCookedToday()?null:candidates()[0]||null}
 function afterStock(r){const o={...state.stock};for(const [i,v] of Object.entries(rawCostFor(r)))o[i]=Math.max(0,(Number(o[i])||0)-v);return o}
 function why(r){const bits=[];if(!state.completed.includes(r.name))bits.push('receita nova para você');else bits.push('receita já concluída');bits.push(`bônus de +${r.bonusPct}%`);bits.push(`${r.emblem.toLocaleString('pt-BR')} emblemas`);if(scarcity(r)<2)bits.push('baixo impacto no seu estoque');return bits.join(' · ')}
@@ -178,32 +216,45 @@ function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extr
 function bindStockInputs(root){root.querySelectorAll('input[data-ing]').forEach(x=>x.oninput=()=>{state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);save();renderAll(true)})}
 function renderInventory(){
   const regularNames=['Ovo','Trigo','Alface','Carne','Leite'];
-  const chefs=[
-    {name:'Chef Cedric',items:['Morango','Cana-de-açúcar']},
-    {name:'Chef Rosa',items:['Milho','Amendoim']},
-    {name:'Chef Gene',items:['Camarão','Arroz']},
-    {name:'Chef Arwen',items:['Batata','Tomate']}
-  ];
-  const chefNames=new Set(chefs.flatMap(c=>c.items));
+  const chefNames=new Set(CHEFS.flatMap(c=>c.items));
   const regular=document.getElementById('regularInventory');
   regular.innerHTML=regularNames.map(n=>stockInputCard(ING_MAP[n])).join('');
   bindStockInputs(regular);
 
+  const active=selectedChef();
   const chefBox=document.getElementById('chefInventory');
-  chefBox.innerHTML=chefs.map(c=>`<div class="stock-card chef"><div class="chef-name">👨‍🍳 ${esc(c.name)}</div><div class="chef-items">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div></div>`).join('');
+  chefBox.innerHTML=CHEFS.map(c=>{
+    const isActive=active===c.name;
+    const previews=c.items.map(n=>`<span>${esc(n)}</span>`).join('<span>•</span>');
+    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
+    return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">👨‍🍳 ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div>${inputs}</div>`;
+  }).join('');
+  chefBox.querySelectorAll('[data-chef]').forEach(card=>card.onclick=e=>{
+    if(e.target.closest('input'))return;
+    state.selectedChefByDate[todayKey()]=card.dataset.chef;
+    save();renderAll(true);
+  });
   bindStockInputs(chefBox);
 
   const special=document.getElementById('specialInventory');
   special.innerHTML=ING.filter(i=>!regularNames.includes(i.name)&&!chefNames.has(i.name)).map(i=>stockInputCard(i)).join('');
   bindStockInputs(special);
+
+  const st=document.getElementById('chefStatus');
+  st.innerHTML=active?`Chef selecionado: <b>${esc(CHEFS.find(c=>c.name===active)?.label||active)}</b>`:'Nenhum chef selecionado.';
 }
 function renderGuild(){const cat=dayType(),g=guildToday();const sel=document.getElementById('guildAdd');sel.innerHTML='<option value="">Selecione...</option>'+RECIPES.filter(r=>r.type===cat&&!g.includes(r.name)).map(r=>`<option>${esc(r.name)}</option>`).join('');document.getElementById('guildChips').innerHTML=g.length?g.map(n=>`<span class="chip">${esc(n)} <button data-rm="${esc(n)}">×</button></span>`).join(''):'<span class="small">Nenhum prato informado.</span>';document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.guildByDate[todayKey()]=g.filter(x=>x!==b.dataset.rm);save();renderAll(false)})}
-function recipeCard(r,full=false){const ok=can(r),g=guildToday().includes(r.name),done=state.completed.includes(r.name),miss=missing(r);return `<div class="recipe ${ok?'can':''} ${g?'guild':''}"><div><h4>${esc(r.name)} <span class="rarity rar-${esc(r.rarity)}">· ${esc(r.rarity)}</span></h4><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${done?'<span class="pill ok">Concluída</span>':''}${g?'<span class="pill bad">Guilda já fez hoje</span>':''}</div><div class="recipeActions">${full?`<button class="btn tiny" data-toggle-done="${r.id}">${done?'Desmarcar concluída':'Marcar concluída'}</button>`:''}<button class="btn tiny" data-details="${r.id}">Detalhes</button>${r.type===dayType()&&!g?`<button class="btn tiny" data-guild="${r.id}">Guilda já fez</button>`:''}${ok&&r.type===dayType()&&!g&&!isCookedToday()?`<button class="btn primary tiny" data-cook="${r.id}">Cozinhei</button>`:''}</div></div><div class="right"><div class="status ${ok?'ok':'no'}">${g?'Ignorada hoje':ok?'Dá para fazer':'Faltam ingredientes'}</div>${!ok&&miss.length?`<div class="sub">${miss.map(x=>`${esc(x.name)}: ${x.raw}`).join('<br>')}</div>`:''}</div></div>`}
-function renderRecommendation(){const box=document.getElementById('recommendation');const hist=state.history[todayKey()];if(hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;document.getElementById('undoCook').onclick=undoCook;return}const r=best();if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Confira o estoque e os pratos que a guilda já fez hoje. A lista abaixo mostra o que está faltando.</div></div>`;return}const raw=rawCostFor(r),aft=afterStock(r);box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Repetida':'Nova'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`}
+function recipeCard(r,full=false){const ok=can(r),g=guildToday().includes(r.name),done=state.completed.includes(r.name),miss=missing(r);return `<div class="recipe ${ok?'can':''} ${g?'guild':''}"><div><h4>${esc(r.name)} <span class="rarity rar-${esc(r.rarity)}">· ${esc(r.rarity)}</span></h4><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${done?'<span class="pill ok">Concluída</span>':''}${g?'<span class="pill bad">Guilda já fez hoje</span>':''}</div><div class="recipeActions">${full?`<button class="btn tiny" data-toggle-done="${r.id}">${done?'Desmarcar concluída':'Marcar concluída'}</button>`:''}<button class="btn tiny" data-details="${r.id}">Detalhes</button>${r.type===dayType()&&!g?`<button class="btn tiny" data-guild="${r.id}">Guilda já fez</button>`:''}${ok&&chefCompatible(r)&&r.type===dayType()&&!g&&!isCookedToday()?`<button class="btn primary tiny" data-cook="${r.id}">Cozinhei</button>`:''}</div></div><div class="right"><div class="status ${ok?'ok':'no'}">${g?'Ignorada hoje':ok?'Dá para fazer':'Faltam ingredientes'}</div>${!ok&&miss.length?`<div class="sub">${miss.map(x=>`${esc(x.name)}: ${x.raw}`).join('<br>')}</div>`:''}</div></div>`}
+function renderRecommendation(){const box=document.getElementById('recommendation');const hist=state.history[todayKey()];if(!selectedChef()&&!hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Antes de começar</div><div class="recname">Escolha o chef</div><div class="why">Selecione Cedric, Rosa, Gene ou Arwen para eu calcular os pratos realmente possíveis com os ingredientes daquele cozinheiro.</div></div>`;return}if(hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;document.getElementById('undoCook').onclick=undoCook;return}const r=best();if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Confira o estoque e os pratos que a guilda já fez hoje. A lista abaixo mostra o que está faltando.</div></div>`;return}const raw=rawCostFor(r),aft=afterStock(r);box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Repetida':'Nova'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`}
 function renderTodayRecipes(){
   const cat=dayType();
   const guild=guildToday();
-  const all=RECIPES.filter(r=>r.type===cat&&!guild.includes(r.name));
+  if(!selectedChef()){
+    document.getElementById('candidateCount').textContent='';
+    document.getElementById('todayRecipes').innerHTML='<div class="no-possible">Escolha um chef para ver os pratos possíveis.</div>';
+    return;
+  }
+  const all=RECIPES.filter(r=>r.type===cat&&chefCompatible(r)&&!guild.includes(r.name));
   const possibles=all.filter(r=>can(r)).sort(cmp);
   document.getElementById('candidateCount').textContent=`${possibles.length} possível(is)`;
   if(possibles.length){
@@ -238,7 +289,7 @@ function exportData(){const blob=new Blob([JSON.stringify({version:2,exportedAt:
 function importData(file){const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);const n=o.state||o;state={...base,...n,stock:{...base.stock,...(n.stock||{})}};save();renderAll(true)}catch{alert('Backup inválido.')}};rd.readAsText(file)}
 // navegação
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
-document.getElementById('dayType').onchange=e=>{state.categoryOverride[todayKey()]=e.target.value;save();renderAll(false)};document.querySelectorAll('.day-btn').forEach(b=>b.onclick=()=>{state.categoryOverride[todayKey()]=b.dataset.cat;save();renderAll(false)});document.getElementById('goal').onchange=e=>{state.goal=e.target.value;save();renderAll(false)};document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);markGuild(r.id);e.target.value=''}};document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];save();renderAll(false)};document.getElementById('clearStock').onclick=()=>{if(confirm('Zerar todo o estoque?')){state.stock={...base.stock};save();renderAll(true)}};document.getElementById('pasteToggle').onclick=()=>document.getElementById('quickPaste').classList.toggle('hidden');document.getElementById('parseStock').onclick=parseStockText;document.getElementById('lastShot').onclick=()=>{state.stock={...base.stock,'Trigo':728,'Carne':27,'Alface':168,'Leite':139,'Ovo':7,'Amendoim':20};save();renderAll(true)};document.getElementById('loadMyProgress').onclick=()=>{state.completed=[...new Set([...state.completed,'Sanduíche de Ovo','Cereais','Sukiyaki','Churrasco do Zeke'])];save();renderAll(false)};['search','fType','fRarity','fState'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{renderAllRecipes();bindDynamic()}));document.getElementById('exportData').onclick=exportData;document.getElementById('importData').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};
+document.getElementById('dayType').onchange=e=>{state.categoryOverride[todayKey()]=e.target.value;save();renderAll(false)};document.querySelectorAll('.day-btn').forEach(b=>b.onclick=()=>{state.categoryOverride[todayKey()]=b.dataset.cat;save();renderAll(false)});document.getElementById('goal').onchange=e=>{state.goal=e.target.value;save();renderAll(false)};document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);markGuild(r.id);e.target.value=''}};document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];save();renderAll(false)};document.getElementById('clearChef').onclick=()=>{delete state.selectedChefByDate[todayKey()];save();renderAll(true)};document.getElementById('clearStock').onclick=()=>{if(confirm('Zerar todo o estoque?')){state.stock={...base.stock};save();renderAll(true)}};document.getElementById('pasteToggle').onclick=()=>document.getElementById('quickPaste').classList.toggle('hidden');document.getElementById('parseStock').onclick=parseStockText;document.getElementById('lastShot').onclick=()=>{state.stock={...base.stock,'Trigo':728,'Carne':27,'Alface':168,'Leite':139,'Ovo':7,'Amendoim':20};save();renderAll(true)};document.getElementById('loadMyProgress').onclick=()=>{state.completed=[...new Set([...state.completed,'Sanduíche de Ovo','Cereais','Sukiyaki','Churrasco do Zeke'])];save();renderAll(false)};['search','fType','fRarity','fState'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{renderAllRecipes();bindDynamic()}));document.getElementById('exportData').onclick=exportData;document.getElementById('importData').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};
 renderIngredients();renderAll(true);if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body></html>

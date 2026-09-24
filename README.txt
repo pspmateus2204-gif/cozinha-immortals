@@ -8,3 +8,5 @@ Tudo é salvo no localStorage do navegador.
 V4: interface principal refeita para seleção rápida por dia, estoque agrupado e pratos possíveis em painel lateral.
 
 V5: adicionada a frase 'PNC DA WT' no canto direito do cabeçalho.
+
+V6: seleção diária de Chef Cedric/Rosa/Gene/Arwen; somente o chef escolhido expande os ingredientes e entra no cálculo das recomendações.
