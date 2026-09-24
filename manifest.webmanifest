@@ -1,0 +1,15 @@
+{
+  "name": "Slayer Legend · Cozinha DV",
+  "short_name": "Cozinha DV",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#120c08",
+  "theme_color": "#1c120c",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
