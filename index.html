@@ -126,6 +126,47 @@ input[type="number"][data-ing]{
   touch-action:manipulation;
 }
 
+
+/* V14 — fluxo guiado para uso rápido no celular */
+.flow-progress{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0 14px}
+.flow-step{border:1px solid #5b432a;background:#1b120c;border-radius:11px;padding:8px 7px;text-align:center;cursor:pointer;min-width:0;color:inherit}
+.flow-step strong{display:block;font-size:11px;color:#f1d69b}
+.flow-step span{display:block;font-size:9px;color:#9f9078;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flow-step.done{border-color:#4e8757;background:#19271a}
+.flow-step.done strong{color:#adf0b5}
+.flow-step.current{border-color:#e4a522;box-shadow:0 0 0 1px #e4a522 inset;background:#34210e}
+.flow-step.locked{opacity:.55}
+.flow-confirm{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flow-confirm .status-note{font-size:11px;color:#9fb0c8}
+.flow-confirm .status-note.ok{color:#aee9b6}
+.section-block.step-highlight{border:1px solid #d99a16;border-radius:13px;padding:12px;background:#24170f;box-shadow:0 0 0 1px #f7c75422 inset}
+.guild-card.step-highlight{border-color:#d99a16;box-shadow:0 0 0 1px #f7c75422 inset}
+.qty-controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:5px;align-items:center}
+.qty-btn{border:1px solid #58687c;background:#162131;color:#f4e3be;border-radius:8px;min-width:44px;padding:8px 6px;font-weight:900;cursor:pointer}
+.qty-btn:active{transform:scale(.97)}
+.stock-card input,.chef-mini input{min-width:0}
+.flow-lock{border:1px dashed #6f552f;border-radius:10px;padding:10px;color:#d8c5a0;background:#17110c;font-size:11px;line-height:1.45}
+.mobile-rec-bar{display:none;position:fixed;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:55;border:1px solid #dca62b;border-radius:14px;background:linear-gradient(140deg,#3a2411,#17100a);box-shadow:0 10px 35px #000b;padding:10px 12px;align-items:center;gap:10px}
+.mobile-rec-main{min-width:0;flex:1}
+.mobile-rec-main small{display:block;color:#e4b94f;font-size:9px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+.mobile-rec-main b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.mobile-rec-main span{font-size:10px;color:#cbb995}
+.mobile-rec-bar .btn{min-height:36px;padding:7px 10px}
+.state-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+@media(max-width:850px){
+  .mobile-rec-bar{display:flex}
+  .app{padding-bottom:125px}
+  .today-side{display:flex;flex-direction:column}
+  .today-side .guild-card{order:1}
+  .today-side #recommendation{order:2}
+  .today-side .possible-box{order:3}
+  .today-side .card{order:4}
+}
+@media(max-width:620px){
+  .flow-progress{grid-template-columns:repeat(5,minmax(78px,1fr));overflow-x:auto;padding-bottom:3px}
+  .flow-step{min-width:78px}
+}
+
 </style>
 </head>
 <body>
@@ -147,6 +188,13 @@ input[type="number"][data-ing]{
 <button class="tab active" data-tab="hoje">Hoje</button><button class="tab" data-tab="receitas">Receitas</button><button class="tab" data-tab="ingredientes">Ingredientes</button><button class="tab" data-tab="historico">Histórico</button><button class="tab" data-tab="fontes">Fontes</button>
 </nav>
 <section id="hoje" class="panel active">
+<div class="flow-progress" id="flowProgress">
+  <button class="flow-step" data-flow-target="dayPicker"><strong>1 · Dia</strong><span id="flowDay">—</span></button>
+  <button class="flow-step" data-flow-target="chefDayBox"><strong>2 · Chef</strong><span id="flowChef">pendente</span></button>
+  <button class="flow-step" data-flow-target="stockSection"><strong>3 · Estoque</strong><span id="flowStock">pendente</span></button>
+  <button class="flow-step" data-flow-target="guildCard"><strong>4 · Guilda</strong><span id="flowGuild">pendente</span></button>
+  <button class="flow-step" data-flow-target="recommendation"><strong>5 · Prato</strong><span id="flowResult">bloqueado</span></button>
+</div>
 <div class="day-picker" id="dayPicker">
   <button class="day-btn" data-cat="Aperitivo">🥗 Terça — Entradas<small>Aperitivos · progresso de exploração</small></button>
   <button class="day-btn" data-cat="Prato principal">🍖 Quarta — Pratos Principais<small>ATQ/HP da guilda</small></button>
@@ -154,7 +202,7 @@ input[type="number"][data-ing]{
 </div>
 <select id="dayType"><option>Aperitivo</option><option>Prato principal</option><option>Sobremesa</option></select>
 
-<div class="chef-day-box">
+<div class="chef-day-box" id="chefDayBox">
   <div class="chef-day-title">
     <h2>👨‍🍳 ESCOLHA O CHEF DO DIA</h2>
     <div style="display:flex;align-items:center;gap:8px">
@@ -168,7 +216,7 @@ input[type="number"][data-ing]{
 
 <div class="today-layout">
   <div class="today-main">
-    <section class="section-block">
+    <section class="section-block" id="stockSection">
       <div class="section-heading"><h2>🛒 Ingredientes Regulares</h2><button class="btn tiny" id="pasteToggle">Colar lista</button></div>
       <p class="helptext">Digite a quantidade bruta que aparece no jogo. A ferramenta converte automaticamente para a quantidade de seleções disponível.</p>
       <div id="quickPaste" class="hidden" style="margin-bottom:10px">
@@ -184,6 +232,10 @@ input[type="number"][data-ing]{
       <div id="specialInventory" class="special-grid"></div>
       <div class="quick-actions">
         <button class="btn bad tiny" id="clearStock">Zerar estoque</button>
+      </div>
+      <div class="flow-confirm">
+        <button class="btn primary" id="confirmStock">✓ Estoque preenchido — continuar</button>
+        <span class="status-note" id="stockConfirmStatus">Confirme quando terminar de informar os ingredientes.</span>
       </div>
     </section>
 
@@ -206,13 +258,17 @@ input[type="number"][data-ing]{
   <aside class="today-side">
     <div id="recommendation"></div>
 
-    <div class="guild-card">
+    <div class="guild-card" id="guildCard">
       <h3>🏰 A guilda já fez hoje</h3>
       <label class="lbl">Adicionar prato
         <select id="guildAdd"><option value="">Selecione...</option></select>
       </label>
       <div id="guildChips" class="chips" style="margin-top:8px"></div>
-      <div class="quick-actions"><button class="btn tiny" id="clearGuild">Limpar</button></div>
+      <div class="quick-actions">
+        <button class="btn tiny" id="clearGuild">Limpar</button>
+        <button class="btn primary tiny" id="confirmGuild">✓ Conferi — continuar</button>
+      </div>
+      <div class="small" id="guildConfirmStatus" style="margin-top:7px">Adicione todos os pratos feitos pela guilda ou confirme que não há outros.</div>
     </div>
 
     <div class="possible-box">
@@ -229,6 +285,11 @@ input[type="number"][data-ing]{
 </section>
 <section id="receitas" class="panel"><div class="card"><div class="head"><h2>63 receitas perfeitas</h2><button class="btn tiny" id="loadMyProgress">Carregar meu progresso</button></div><div class="body">
 <div class="filters"><label class="lbl wide">Buscar<input id="search" type="text" placeholder="Ex.: amendoim, leite, caviar, pão..."></label><label class="lbl">Categoria<select id="fType"><option value="">Todas</option><option>Aperitivo</option><option>Prato principal</option><option>Sobremesa</option></select></label><label class="lbl">Raridade<select id="fRarity"><option value="">Todas</option><option>Comum</option><option>Ótimo</option><option>Raro</option><option>Épico</option><option>Lendário</option><option>Mítico</option><option>Imortal</option></select></label><label class="lbl">Estado<select id="fState"><option value="">Todos</option><option value="can">Posso fazer</option><option value="new">Não concluídas</option><option value="done">Concluídas</option></select></label></div>
+<div class="state-legend">
+  <span class="pill ok">✓ Desbloqueada</span>
+  <span class="pill bad">🏰 Guilda hoje</span>
+  <span class="pill gold">🍳 Cozinhado hoje</span>
+</div>
 <div class="metricGrid" id="progressMetrics" style="margin-bottom:10px"></div><div id="allRecipes" class="recipeList"></div>
 </div></div></section>
 
@@ -246,6 +307,14 @@ input[type="number"][data-ing]{
 </div></div></section>
 <div class="footer">Feito para consulta rápida no celular · sem login · sem enviar seu estoque para servidor</div>
 </div>
+<div class="mobile-rec-bar" id="mobileRecBar">
+  <div class="mobile-rec-main">
+    <small id="mobileRecLabel">Próxima etapa</small>
+    <b id="mobileRecName">Escolha o chef</b>
+    <span id="mobileRecSub">Siga as etapas acima</span>
+  </div>
+  <button class="btn primary tiny" id="mobileRecAction">Ver</button>
+</div>
 <div id="modal" class="modal"><div class="sheet"><div class="row" style="justify-content:space-between"><h3 id="modalTitle">Detalhes</h3><button class="btn tiny" id="closeModal">Fechar</button></div><div id="modalBody"></div></div></div>
 <script>
 const DATA={"recipes":[{"id":1,"type":"Aperitivo","rarity":"Comum","name":"Sanduíche de Ovo","nameEn":"Egg Sandwich","ingredients":["Ovo","Ovo","Trigo","Trigo"],"effect":"Progresso da exploração","bonusPct":1,"emblem":500,"perfect":true},{"id":2,"type":"Aperitivo","rarity":"Ótimo","name":"Salada de Batata","nameEn":"Potato Salad","ingredients":["Batata","Batata","Ovo","Leite","Alface"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":3,"type":"Aperitivo","rarity":"Ótimo","name":"Sopa de Tomate","nameEn":"Tomato Soup","ingredients":["Tomate","Tomate","Trigo","Leite"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":4,"type":"Aperitivo","rarity":"Ótimo","name":"Cereais","nameEn":"Cereal","ingredients":["Milho","Milho","Leite"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":5,"type":"Aperitivo","rarity":"Ótimo","name":"Mingau de Arroz com Carne","nameEn":"Beef Porridge","ingredients":["Arroz","Arroz","Carne"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":6,"type":"Aperitivo","rarity":"Ótimo","name":"Dim Sum de Camarão","nameEn":"Shrimp Dim Sum","ingredients":["Camarão","Camarão","Trigo","Trigo"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":7,"type":"Aperitivo","rarity":"Raro","name":"Omelete de Queijo","nameEn":"Cheese Omelet","ingredients":["Queijo","Ovo","Ovo","Leite"],"effect":"Progresso da exploração","bonusPct":2,"emblem":1500,"perfect":true},{"id":8,"type":"Aperitivo","rarity":"Épico","name":"Canapé de Camarão","nameEn":"Shrimp Canape","ingredients":["Queijo","Camarão","Camarão","Trigo"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":9,"type":"Aperitivo","rarity":"Épico","name":"Milho com Queijo","nameEn":"Corn Cheese","ingredients":["Queijo","Queijo","Milho","Milho"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":10,"type":"Aperitivo","rarity":"Épico","name":"Sanduíche de Presunto e Queijo","nameEn":"Ham & Cheese Sandwich","ingredients":["Queijo","Morango","Carne","Trigo","Alface"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":11,"type":"Aperitivo","rarity":"Épico","name":"Salada de Ricota","nameEn":"Ricotta Salad","ingredients":["Queijo","Tomate","Alface","Alface"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":12,"type":"Aperitivo","rarity":"Épico","name":"Kimchi","nameEn":"Kimchi","ingredients":["Pimenta","Alface","Alface"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":13,"type":"Aperitivo","rarity":"Épico","name":"Nachos com Bacon e Queijo","nameEn":"Bacon Cheese Nachos","ingredients":["Queijo","Milho","Milho","Carne"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2000,"perfect":true},{"id":14,"type":"Aperitivo","rarity":"Lendário","name":"Baguete com Pesto de Manjericão","nameEn":"Basil Pesto Baguette","ingredients":["Manjericão","Queijo","Trigo","Trigo"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2500,"perfect":true},{"id":15,"type":"Aperitivo","rarity":"Comum","name":"Café da Manhã Inglês","nameEn":"English Breakfast","ingredients":["Ovo","Carne","Trigo","Leite","Alface"],"effect":"Progresso da exploração","bonusPct":1,"emblem":500,"perfect":true},{"id":16,"type":"Aperitivo","rarity":"Comum","name":"Salada da Ellie","nameEn":"Ellie's Salad","ingredients":["Alface","Alface","Alface","Alface","Alface"],"effect":"Progresso da exploração","bonusPct":1,"emblem":500,"perfect":true},{"id":17,"type":"Aperitivo","rarity":"Ótimo","name":"Batata Frita","nameEn":"French Fries","ingredients":["Batata","Batata","Batata","Trigo"],"effect":"Progresso da exploração","bonusPct":1,"emblem":1000,"perfect":true},{"id":18,"type":"Aperitivo","rarity":"Raro","name":"Palitos de Queijo","nameEn":"Cheese Sticks","ingredients":["Queijo","Queijo","Trigo","Trigo"],"effect":"Progresso da exploração","bonusPct":2,"emblem":1500,"perfect":true},{"id":19,"type":"Aperitivo","rarity":"Lendário","name":"Canapé de Atum","nameEn":"Tuna Canape","ingredients":["Atum","Queijo","Tomate","Trigo"],"effect":"Progresso da exploração","bonusPct":3,"emblem":2500,"perfect":true},{"id":20,"type":"Aperitivo","rarity":"Imortal","name":"Sopa Cremosa de Caviar","nameEn":"Caviar Cream Soup","ingredients":["Caviar","Trigo","Leite"],"effect":"Progresso da exploração","bonusPct":5,"emblem":3500,"perfect":true},{"id":21,"type":"Aperitivo","rarity":"Imortal","name":"Canapé de Caviar","nameEn":"Caviar Canape","ingredients":["Caviar","Queijo","Trigo"],"effect":"Progresso da exploração","bonusPct":5,"emblem":3500,"perfect":true},{"id":22,"type":"Prato principal","rarity":"Comum","name":"Katsu de Lombo Suíno","nameEn":"Pork Loin Katsu","ingredients":["Ovo","Carne","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":5,"emblem":1500,"perfect":true},{"id":23,"type":"Prato principal","rarity":"Comum","name":"Sukiyaki","nameEn":"Sukiyaki","ingredients":["Ovo","Carne","Alface"],"effect":"ATQ/HP dos membros da guilda","bonusPct":5,"emblem":1500,"perfect":true},{"id":24,"type":"Prato principal","rarity":"Ótimo","name":"Hambúrguer de Camarão","nameEn":"Shrimp Burger","ingredients":["Camarão","Trigo","Alface"],"effect":"ATQ/HP dos membros da guilda","bonusPct":10,"emblem":2000,"perfect":true},{"id":25,"type":"Prato principal","rarity":"Ótimo","name":"Omurice","nameEn":"Omurice","ingredients":["Arroz","Ovo","Ovo","Carne"],"effect":"ATQ/HP dos membros da guilda","bonusPct":10,"emblem":2000,"perfect":true},{"id":26,"type":"Prato principal","rarity":"Épico","name":"Espaguete Assado com Queijo","nameEn":"Baked Cheese Spaghetti","ingredients":["Queijo","Tomate","Ovo","Carne","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3000,"perfect":true},{"id":27,"type":"Prato principal","rarity":"Épico","name":"Ovos no Inferno","nameEn":"Eggs in Hell","ingredients":["Queijo","Tomate","Ovo","Carne"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3000,"perfect":true},{"id":28,"type":"Prato principal","rarity":"Lendário","name":"Bibimbap","nameEn":"Bibimbap","ingredients":["Pimenta","Arroz","Ovo","Carne","Alface"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":29,"type":"Prato principal","rarity":"Lendário","name":"Margherita","nameEn":"Margherita","ingredients":["Manjericão","Queijo","Tomate","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":30,"type":"Prato principal","rarity":"Lendário","name":"Malatang","nameEn":"Malatang","ingredients":["Pimenta","Amendoim","Carne","Alface"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":31,"type":"Prato principal","rarity":"Lendário","name":"Pilaf Apimentado","nameEn":"Spicy Pilaf","ingredients":["Pimenta","Arroz","Carne"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":32,"type":"Prato principal","rarity":"Lendário","name":"Sushi de Atum","nameEn":"Tuna Sushi","ingredients":["Atum","Atum","Arroz"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":33,"type":"Prato principal","rarity":"Lendário","name":"Massa com Manjericão","nameEn":"Basil Pasta","ingredients":["Manjericão","Queijo","Ovo","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":34,"type":"Prato principal","rarity":"Lendário","name":"Fish & Chips","nameEn":"Fish & Chips","ingredients":["Atum","Batata","Trigo","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":35,"type":"Prato principal","rarity":"Mítico","name":"Camarão com Pimenta Doce","nameEn":"Sweet Chili Shrimp","ingredients":["Pimenta","Camarão","Camarão","Cana-de-açúcar"],"effect":"ATQ/HP dos membros da guilda","bonusPct":25,"emblem":4000,"perfect":true},{"id":36,"type":"Prato principal","rarity":"Comum","name":"Churrasco do Zeke","nameEn":"Zeke's BBQ","ingredients":["Carne","Carne","Carne","Carne","Carne"],"effect":"ATQ/HP dos membros da guilda","bonusPct":5,"emblem":1500,"perfect":true},{"id":37,"type":"Prato principal","rarity":"Raro","name":"Hambúrguer com Queijo","nameEn":"Cheeseburger","ingredients":["Queijo","Carne","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":10,"emblem":2500,"perfect":true},{"id":38,"type":"Prato principal","rarity":"Épico","name":"Ramen Apimentado da Miho","nameEn":"Miho's Spicy Ramen","ingredients":["Pimenta","Pimenta","Ovo","Carne","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3000,"perfect":true},{"id":39,"type":"Prato principal","rarity":"Lendário","name":"Frango Yangnyeom","nameEn":"Yangnyeom Chicken","ingredients":["Pimenta","Cana-de-açúcar","Carne","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":20,"emblem":3500,"perfect":true},{"id":40,"type":"Prato principal","rarity":"Imortal","name":"Gorgonzola","nameEn":"Gorgonzola","ingredients":["Favo de Mel","Queijo","Queijo","Trigo"],"effect":"ATQ/HP dos membros da guilda","bonusPct":30,"emblem":5000,"perfect":true},{"id":41,"type":"Prato principal","rarity":"Imortal","name":"Risoto de Trufas","nameEn":"Truffle Risotto","ingredients":["Trufa","Arroz","Carne","Leite"],"effect":"ATQ/HP dos membros da guilda","bonusPct":30,"emblem":5000,"perfect":true},{"id":42,"type":"Prato principal","rarity":"Imortal","name":"Nhoque de Trufas","nameEn":"Truffle Gnocchi","ingredients":["Trufa","Batata","Trigo","Leite"],"effect":"ATQ/HP dos membros da guilda","bonusPct":30,"emblem":5000,"perfect":true},{"id":43,"type":"Sobremesa","rarity":"Comum","name":"Iogurte Natural","nameEn":"Plain Yogurt","ingredients":["Leite","Leite","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1000,"perfect":true},{"id":44,"type":"Sobremesa","rarity":"Ótimo","name":"Bolo de Morango","nameEn":"Strawberry Cake","ingredients":["Morango","Ovo","Trigo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":45,"type":"Sobremesa","rarity":"Ótimo","name":"Tarte de Ovo","nameEn":"Egg Tart","ingredients":["Cana-de-açúcar","Ovo","Ovo","Trigo"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":46,"type":"Sobremesa","rarity":"Ótimo","name":"Pudim","nameEn":"Pudding","ingredients":["Cana-de-açúcar","Cana-de-açúcar","Ovo","Leite","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":47,"type":"Sobremesa","rarity":"Ótimo","name":"Leite de Morango","nameEn":"Fresh Strawberry Milk","ingredients":["Morango","Leite","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":48,"type":"Sobremesa","rarity":"Ótimo","name":"Donut","nameEn":"Donut","ingredients":["Cana-de-açúcar","Ovo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":49,"type":"Sobremesa","rarity":"Ótimo","name":"Tanghulu de Morango","nameEn":"Strawberry Tanghulu","ingredients":["Cana-de-açúcar","Cana-de-açúcar","Morango","Morango","Morango"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":50,"type":"Sobremesa","rarity":"Épico","name":"Brownie","nameEn":"Brownie","ingredients":["Cacau","Ovo","Trigo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":30,"emblem":2500,"perfect":true},{"id":51,"type":"Sobremesa","rarity":"Épico","name":"Bebida de Cacau","nameEn":"Cocoa","ingredients":["Cacau","Leite","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":30,"emblem":2500,"perfect":true},{"id":52,"type":"Sobremesa","rarity":"Lendário","name":"Sorvete de Chocolate","nameEn":"Chocolate Ice Cream","ingredients":["Cacau","Cana-de-açúcar","Ovo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":30,"emblem":3000,"perfect":true},{"id":53,"type":"Sobremesa","rarity":"Lendário","name":"Cookies com Gotas de Chocolate","nameEn":"Chocolate Chip Cookies","ingredients":["Cacau","Cana-de-açúcar","Ovo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":30,"emblem":3000,"perfect":true},{"id":54,"type":"Sobremesa","rarity":"Comum","name":"Pão","nameEn":"Bread","ingredients":["Ovo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1000,"perfect":true},{"id":55,"type":"Sobremesa","rarity":"Ótimo","name":"Pipoca","nameEn":"Popcorn","ingredients":["Milho","Milho","Milho"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":56,"type":"Sobremesa","rarity":"Ótimo","name":"Biscoito de Arroz","nameEn":"Rice Cracker","ingredients":["Arroz","Arroz","Arroz","Arroz"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":57,"type":"Sobremesa","rarity":"Ótimo","name":"Sorvete de Morango","nameEn":"Strawberry Ice Cream","ingredients":["Cana-de-açúcar","Morango","Ovo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":58,"type":"Sobremesa","rarity":"Ótimo","name":"Churros","nameEn":"Churros","ingredients":["Cana-de-açúcar","Trigo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":59,"type":"Sobremesa","rarity":"Ótimo","name":"Algodão-doce da Luna","nameEn":"Luna's Cotton Candy","ingredients":["Cana-de-açúcar","Cana-de-açúcar","Cana-de-açúcar","Cana-de-açúcar","Cana-de-açúcar"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":10,"emblem":1500,"perfect":true},{"id":60,"type":"Sobremesa","rarity":"Raro","name":"Cheesecake","nameEn":"Cheesecake","ingredients":["Queijo","Ovo","Trigo","Trigo","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":20,"emblem":2000,"perfect":true},{"id":61,"type":"Sobremesa","rarity":"Lendário","name":"Refresco de Tomate e Manjericão","nameEn":"Tomato Basil Ade","ingredients":["Manjericão","Tomate","Tomate","Tomate"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":30,"emblem":3000,"perfect":true},{"id":62,"type":"Sobremesa","rarity":"Mítico","name":"PB&J (Pasta de Amendoim e Geleia)","nameEn":"PB&J","ingredients":["Amendoim","Morango","Trigo"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":40,"emblem":3500,"perfect":true},{"id":63,"type":"Sobremesa","rarity":"Imortal","name":"Iogurte Congelado com Mel","nameEn":"Honey Frozen Yogurt","ingredients":["Favo de Mel","Leite","Leite","Leite"],"effect":"Dano à Wyvern pelos membros da guilda","bonusPct":50,"emblem":4000,"perfect":true}],"ingredients":[{"name":"Trigo","nameEn":"Wheat","rarity":"Comum","source":"Exploração","runeEffect":"Vida extra","runeValue":0.01,"cost":100},{"name":"Carne","nameEn":"Meat","rarity":"Comum","source":"Exploração","runeEffect":"ATQ extra","runeValue":0.01,"cost":10},{"name":"Alface","nameEn":"Lettuce","rarity":"Comum","source":"Exploração","runeEffect":"Recuperação de vida extra","runeValue":0.01,"cost":20},{"name":"Leite","nameEn":"Milk","rarity":"Comum","source":"Exploração","runeEffect":"Precisão","runeValue":1.0,"cost":50},{"name":"Ovo","nameEn":"Egg","rarity":"Ótimo","source":"Exploração","runeEffect":"Esquiva","runeValue":1.0,"cost":1},{"name":"Batata","nameEn":"Potato","rarity":"Épico","source":"Arwen","runeEffect":"Vida extra","runeValue":0.02,"cost":10},{"name":"Tomate","nameEn":"Tomato","rarity":"Épico","source":"Arwen","runeEffect":"Vida extra","runeValue":0.02,"cost":10},{"name":"Camarão","nameEn":"Shrimp","rarity":"Épico","source":"Gene","runeEffect":"ATQ extra","runeValue":0.02,"cost":10},{"name":"Arroz","nameEn":"Rice","rarity":"Épico","source":"Gene","runeEffect":"ATQ extra","runeValue":0.02,"cost":10},{"name":"Amendoim","nameEn":"Peanut","rarity":"Épico","source":"Rosa","runeEffect":"Recuperação de vida extra","runeValue":0.02,"cost":10},{"name":"Milho","nameEn":"Corn","rarity":"Épico","source":"Rosa","runeEffect":"Recuperação de vida extra","runeValue":0.02,"cost":10},{"name":"Morango","nameEn":"Strawberry","rarity":"Épico","source":"Cedric","runeEffect":"Precisão","runeValue":2.0,"cost":10},{"name":"Cana-de-açúcar","nameEn":"Sugarcane","rarity":"Épico","source":"Cedric","runeEffect":"Precisão","runeValue":2.0,"cost":10},{"name":"Queijo","nameEn":"Cheese","rarity":"Lendário","source":"Exploração","runeEffect":"Velocidade de ataque","runeValue":0.01,"cost":1},{"name":"Pimenta","nameEn":"Chili","rarity":"Mítico","source":"Montanhas de Lava","runeEffect":"Dano de fogo","runeValue":0.01,"cost":1},{"name":"Atum","nameEn":"Tuna","rarity":"Mítico","source":"Vale de Gelo","runeEffect":"Dano de água","runeValue":0.01,"cost":1},{"name":"Manjericão","nameEn":"Basil","rarity":"Mítico","source":"Penhasco do Vento","runeEffect":"Dano de vento","runeValue":0.01,"cost":1},{"name":"Cacau","nameEn":"Cacao","rarity":"Mítico","source":"Planalto Desolado","runeEffect":"Dano de terra","runeValue":0.01,"cost":1},{"name":"Caviar","nameEn":"Caviar","rarity":"Imortal","source":"Não informado","runeEffect":"Dano de todos os atributos","runeValue":0.01,"cost":1},{"name":"Trufa","nameEn":"Truffle","rarity":"Imortal","source":"Não informado","runeEffect":"Dano de todos os atributos","runeValue":0.01,"cost":1},{"name":"Favo de Mel","nameEn":"Honeycomb","rarity":"Imortal","source":"Não informado","runeEffect":"Dano de todos os atributos","runeValue":0.01,"cost":1}],"recipeValidation":{"status":"verified","date":"2026-09-24","count":63,"categories":{"Aperitivo":21,"Prato principal":21,"Sobremesa":21},"note":"Receitas revisadas contra os três prints fornecidos pelo usuário."}};
@@ -256,9 +325,9 @@ const CATS=["Aperitivo","Prato principal","Sobremesa"];
 const KEY='slayer_dv_kitchen_v2';
 const todayKey=()=>{const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${dd}`};
 function autoCategory(){const a=new Date(2026,8,22);a.setHours(0,0,0,0);const d=new Date();d.setHours(0,0,0,0);const diff=Math.round((d-a)/86400000);return CATS[((diff%3)+3)%3]}
-const base={stock:Object.fromEntries(ING.map(i=>[i.name,0])),completed:[],guildByDate:{},history:{},categoryOverride:{},selectedChefByDate:{},goal:'balanced'};
+const base={stock:Object.fromEntries(ING.map(i=>[i.name,0])),completed:[],guildByDate:{},history:{},categoryOverride:{},selectedChefByDate:{},stockCheckedByDate:{},guildCheckedByDate:{},goal:'balanced'};
 let state;try{state={...base,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{state=structuredClone(base)};
-state.stock={...base.stock,...(state.stock||{})};state.completed=Array.isArray(state.completed)?state.completed:[];state.guildByDate=state.guildByDate||{};state.history=state.history||{};state.categoryOverride=state.categoryOverride||{};state.selectedChefByDate=state.selectedChefByDate||{};
+state.stock={...base.stock,...(state.stock||{})};state.completed=Array.isArray(state.completed)?state.completed:[];state.guildByDate=state.guildByDate||{};state.history=state.history||{};state.categoryOverride=state.categoryOverride||{};state.selectedChefByDate=state.selectedChefByDate||{};state.stockCheckedByDate=state.stockCheckedByDate||{};state.guildCheckedByDate=state.guildCheckedByDate||{};
 // Migra a versão anterior, se houver.
 try{const old=JSON.parse(localStorage.getItem('receitasdv_ptbr_v1')||'null');if(old&&state.completed.length===0){state.stock={...state.stock,...(old.stock||{})};state.completed=old.completed||[]}}catch{}
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
@@ -280,6 +349,17 @@ const CHEFS=[
 ];
 const CHEF_ITEM_SOURCE=new Set(CHEFS.map(c=>c.name));
 function selectedChef(){return state.selectedChefByDate[todayKey()]||''}
+function hasAnyStock(){return ING.some(i=>(Number(state.stock[i.name])||0)>0)}
+function stockChecked(){return !!state.stockCheckedByDate[todayKey()]}
+function guildChecked(){return !!state.guildCheckedByDate[todayKey()]}
+function flowReady(){return !!selectedChef()&&hasAnyStock()&&stockChecked()&&guildChecked()}
+function currentFlowStep(){
+  if(!selectedChef())return 2;
+  if(!hasAnyStock()||!stockChecked())return 3;
+  if(!guildChecked())return 4;
+  return 5;
+}
+
 function chefCompatible(r){
   const chef=selectedChef();
   if(!chef)return false;
@@ -297,7 +377,7 @@ function candidates(cat=dayType()){const g=new Set(guildToday());return RECIPES.
 function best(){return isCookedToday()?null:candidates()[0]||null}
 function afterStock(r){const o={...state.stock};for(const [i,v] of Object.entries(rawCostFor(r)))o[i]=Math.max(0,(Number(o[i])||0)-v);return o}
 function why(r){const bits=[];if(!state.completed.includes(r.name))bits.push('receita nova para você');else bits.push('receita já concluída');bits.push(`bônus de +${r.bonusPct}%`);bits.push(`${r.emblem.toLocaleString('pt-BR')} emblemas`);if(scarcity(r)<2)bits.push('baixo impacto no seu estoque');return bits.join(' · ')}
-function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i.name)} sel.</b></div></div><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}
+function stockInputCard(i,extraClass=''){return `<div class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i.name)} sel.</b></div></div><div class="qty-controls"><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"><button type="button" class="qty-btn" data-qty="${esc(i.name)}" data-delta="-${i.cost}">−${i.cost}</button><button type="button" class="qty-btn" data-qty="${esc(i.name)}" data-delta="${i.cost}">+${i.cost}</button></div></div>`}
 function refreshDecisionPanels(){
   renderRecommendation();
   renderTodayRecipes();
@@ -319,18 +399,30 @@ function updateSelectionLabel(input){
 }
 function bindStockInputs(root){
   root.querySelectorAll('input[data-ing]').forEach(x=>{
-    // Durante a digitação: somente atualiza o estado e o pequeno contador local.
-    // Nenhum painel ou input é recriado, preservando o foco e o teclado do celular.
     x.oninput=()=>{
       state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);
+      state.stockCheckedByDate[todayKey()]=false;
       save();
       updateSelectionLabel(x);
+      renderFlowProgress();
+      renderMobileBar();
     };
-    // Só recalcula a recomendação quando o usuário termina aquele campo.
     x.onchange=()=>{
       state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);
+      state.stockCheckedByDate[todayKey()]=false;
       save();
-      refreshDecisionPanels();
+      renderRecommendation();renderTodayRecipes();renderNext();renderFlowProgress();renderMobileBar();bindDynamic();
+    };
+  });
+  root.querySelectorAll('[data-qty]').forEach(b=>{
+    b.onclick=()=>{
+      const name=b.dataset.qty,delta=Number(b.dataset.delta)||0;
+      state.stock[name]=Math.max(0,(Number(state.stock[name])||0)+delta);
+      state.stockCheckedByDate[todayKey()]=false;
+      save();
+      const input=[...document.querySelectorAll('input[data-ing]')].find(el=>el.dataset.ing===name);
+      if(input){input.value=state.stock[name];updateSelectionLabel(input)}
+      renderRecommendation();renderTodayRecipes();renderNext();renderFlowProgress();renderMobileBar();bindDynamic();
     };
   });
 }
@@ -346,12 +438,13 @@ function renderInventory(){
   chefBox.innerHTML=CHEFS.map(c=>{
     const isActive=active===c.name;
     const previews=c.items.map(n=>`<span>${esc(n)}</span>`).join('<span>•</span>');
-    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i.name)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
+    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<div class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i.name)} sel.</small><div class="qty-controls"><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"><button type="button" class="qty-btn" data-qty="${esc(i.name)}" data-delta="-${i.cost}">−${i.cost}</button><button type="button" class="qty-btn" data-qty="${esc(i.name)}" data-delta="${i.cost}">+${i.cost}</button></div></div>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
     return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">${c.name==='Rosa'?'👩‍🍳':'👨‍🍳'} ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div><div class="chef-hint">${esc(c.desc)}<br>${isActive?'Chef selecionado — informe abaixo quanto possui de cada ingrediente.':'Clique no card para selecionar.'}</div>${inputs}</div>`;
   }).join('');
   chefBox.querySelectorAll('[data-chef]').forEach(card=>card.onclick=e=>{
     if(e.target.closest('input'))return;
     state.selectedChefByDate[todayKey()]=card.dataset.chef;
+    state.stockCheckedByDate[todayKey()]=false;
     save();renderAll(true);
   });
   bindStockInputs(chefBox);
@@ -364,11 +457,33 @@ function renderInventory(){
   st.innerHTML=active?`Chef selecionado: <b>${esc(CHEFS.find(c=>c.name===active)?.label||active)}</b>`:'Nenhum chef selecionado.';
 }
 function renderGuild(){const cat=dayType(),g=guildToday();const sel=document.getElementById('guildAdd');sel.innerHTML='<option value="">Selecione...</option>'+RECIPES.filter(r=>r.type===cat&&!g.includes(r.name)).map(r=>`<option>${esc(r.name)}</option>`).join('');document.getElementById('guildChips').innerHTML=g.length?g.map(n=>`<span class="chip">${esc(n)} <button data-rm="${esc(n)}">×</button></span>`).join(''):'<span class="small">Nenhum prato informado.</span>';document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.guildByDate[todayKey()]=g.filter(x=>x!==b.dataset.rm);save();renderAll(false)})}
-function recipeCard(r,full=false){const ok=can(r),g=guildToday().includes(r.name),done=state.completed.includes(r.name),miss=missing(r);return `<div class="recipe ${ok?'can':''} ${g?'guild':''}"><div><h4>${esc(r.name)} <span class="rarity rar-${esc(r.rarity)}">· ${esc(r.rarity)}</span></h4><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${done?'<span class="pill ok">Concluída</span>':''}${g?'<span class="pill bad">Guilda já fez hoje</span>':''}</div><div class="recipeActions">${full?`<button class="btn tiny" data-toggle-done="${r.id}">${done?'Desmarcar concluída':'Marcar concluída'}</button>`:''}<button class="btn tiny" data-details="${r.id}">Detalhes</button>${r.type===dayType()&&!g?`<button class="btn tiny" data-guild="${r.id}">Guilda já fez</button>`:''}${ok&&chefCompatible(r)&&r.type===dayType()&&!g&&!isCookedToday()?`<button class="btn primary tiny" data-cook="${r.id}">Cozinhei</button>`:''}</div></div><div class="right"><div class="status ${ok?'ok':'no'}">${g?'Ignorada hoje':ok?'Dá para fazer':'Faltam ingredientes'}</div>${!ok&&miss.length?`<div class="sub">${miss.map(x=>`${esc(x.name)}: ${x.raw}`).join('<br>')}</div>`:''}</div></div>`}
-function renderRecommendation(){const box=document.getElementById('recommendation');const hist=state.history[todayKey()];if(!selectedChef()&&!hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Antes de começar</div><div class="recname">Escolha o chef</div><div class="why">Selecione um dos quatro chefs logo acima. Cada chef libera dois ingredientes próprios e a recomendação é recalculada na hora.</div></div>`;return}if(hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;document.getElementById('undoCook').onclick=undoCook;return}const r=best();if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Confira o estoque e os pratos que a guilda já fez hoje. A lista abaixo mostra o que está faltando.</div></div>`;return}const raw=rawCostFor(r),aft=afterStock(r);box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Repetida':'Nova'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`}
+function recipeCard(r,full=false){
+  const ok=can(r),g=guildToday().includes(r.name),done=state.completed.includes(r.name),cooked=state.history[todayKey()]?.recipe===r.name,miss=missing(r);
+  return `<div class="recipe ${ok?'can':''} ${g?'guild':''}"><div><h4>${esc(r.name)} <span class="rarity rar-${esc(r.rarity)}">· ${esc(r.rarity)}</span></h4><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${done?'<span class="pill ok">✓ Desbloqueada</span>':''}${g?'<span class="pill bad">🏰 Guilda hoje</span>':''}${cooked?'<span class="pill gold">🍳 Cozinhado hoje</span>':''}</div><div class="recipeActions">${full?`<button class="btn tiny" data-toggle-done="${r.id}">${done?'Desmarcar concluída':'Marcar concluída'}</button>`:''}<button class="btn tiny" data-details="${r.id}">Detalhes</button>${r.type===dayType()&&!g?`<button class="btn tiny" data-guild="${r.id}">Guilda já fez</button>`:''}${ok&&chefCompatible(r)&&r.type===dayType()&&!g&&!isCookedToday()&&flowReady()?`<button class="btn primary tiny" data-cook="${r.id}">Cozinhei</button>`:''}</div></div><div class="right"><div class="status ${ok?'ok':'no'}">${cooked?'Seu prato de hoje':g?'Ignorada hoje':ok?'Dá para fazer':'Faltam ingredientes'}</div>${!ok&&miss.length?`<div class="sub">${miss.map(x=>`${esc(x.name)}: ${x.raw}`).join('<br>')}</div>`:''}</div></div>`;
+}
+function renderRecommendation(){
+  const box=document.getElementById('recommendation'),hist=state.history[todayKey()];
+  if(hist){
+    box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;
+    document.getElementById('undoCook').onclick=undoCook;return;
+  }
+  if(!selectedChef()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 2 de 5</div><div class="recname">Escolha o chef</div><div class="why">Selecione Cedric, Rosa, Gene ou Arwen para continuar.</div></div>`;return}
+  if(!hasAnyStock()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 3 de 5</div><div class="recname">Informe o estoque</div><div class="why">Preencha seus ingredientes. Use os botões +/− para lançar rapidamente uma seleção inteira.</div></div>`;return}
+  if(!stockChecked()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 3 de 5</div><div class="recname">Confirme o estoque</div><div class="why">Quando terminar os valores, toque em <b>Estoque preenchido — continuar</b>.</div></div>`;return}
+  if(!guildChecked()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 4 de 5</div><div class="recname">Confira a guilda</div><div class="why">Adicione os pratos que a guilda já fez e toque em <b>Conferi — continuar</b>. Se não fez nenhum, apenas confirme.</div></div>`;return}
+  const r=best();
+  if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Com o estoque, chef e pratos da guilda informados, nenhuma receita perfeita está disponível agora. Veja abaixo o que está faltando.</div></div>`;return}
+  const raw=rawCostFor(r),aft=afterStock(r);
+  box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Já desbloqueada':'Nova para você'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`;
+}
 function renderTodayRecipes(){
   const cat=dayType();
   const guild=guildToday();
+  if(!flowReady()){
+    document.getElementById('candidateCount').textContent='';
+    document.getElementById('todayRecipes').innerHTML='<div class="flow-lock">Conclua Chef, Estoque e Guilda para calcular os pratos possíveis com segurança.</div>';
+    return;
+  }
   if(!selectedChef()){
     document.getElementById('candidateCount').textContent='';
     document.getElementById('todayRecipes').innerHTML='<div class="no-possible">Escolha um chef para ver os pratos possíveis.</div>';
@@ -387,6 +502,47 @@ function renderTodayRecipes(){
 function nextCategory(){const i=CATS.indexOf(dayType());return CATS[(i+1)%3]}
 function missingScore(r){return missing(r).reduce((s,x)=>s+(rarityWeight[ING_MAP[x.name].rarity]||1)*Math.max(1,x.raw/ING_MAP[x.name].cost),0)}
 function renderNext(){const cat=nextCategory();let list=RECIPES.filter(r=>r.type===cat&&!state.completed.includes(r.name)).sort((a,b)=>missingScore(a)-missingScore(b)||b.bonusPct-a.bonusPct).slice(0,3);document.getElementById('nextTargets').innerHTML=`<div class="small" style="margin-bottom:6px">Próxima categoria: <b>${cat}</b>. Alvos novos mais próximos com seu estoque atual:</div>`+list.map(r=>{const m=missing(r);return `<div class="target"><b>${esc(r.name)}</b> · +${r.bonusPct}%<div class="sub">${m.length?m.map(x=>`Falta ${x.raw} ${esc(x.name)}`).join(' · '):'Já dá para fazer'}</div>${m.length?`<div class="sourceLine">Buscar: ${m.map(x=>`${esc(x.name)} → ${esc(x.source)}`).join(' · ')}</div>`:''}</div>`}).join('')}
+
+function renderFlowProgress(){
+  const step=currentFlowStep(),hist=state.history[todayKey()];
+  document.getElementById('flowDay').textContent=dayType();
+  document.getElementById('flowChef').textContent=selectedChef()?`Chef ${selectedChef()}`:'pendente';
+  document.getElementById('flowStock').textContent=stockChecked()?'confirmado':hasAnyStock()?'confirmar':'pendente';
+  document.getElementById('flowGuild').textContent=guildChecked()?`${guildToday().length} informado(s)`:'pendente';
+  document.getElementById('flowResult').textContent=hist?'concluído':flowReady()?'liberado':'bloqueado';
+  document.querySelectorAll('.flow-step').forEach((el,i)=>{
+    const n=i+1;
+    el.classList.toggle('done',hist?true:n<step || (n===3&&stockChecked()) || (n===4&&guildChecked()));
+    el.classList.toggle('current',!hist&&n===step);
+    el.classList.toggle('locked',!hist&&n>step);
+  });
+  const ss=document.getElementById('stockConfirmStatus');
+  ss.textContent=stockChecked()?'Estoque confirmado. Se alterar algum valor, será necessário confirmar novamente.':'Confirme quando terminar de informar os ingredientes.';
+  ss.classList.toggle('ok',stockChecked());
+  const gs=document.getElementById('guildConfirmStatus');
+  gs.textContent=guildChecked()?'Guilda conferida para hoje.':'Adicione todos os pratos feitos pela guilda ou confirme que não há outros.';
+  gs.classList.toggle('ok',guildChecked());
+  document.getElementById('stockSection').classList.toggle('step-highlight',!hist&&step===3);
+  document.getElementById('guildCard').classList.toggle('step-highlight',!hist&&step===4);
+}
+function renderMobileBar(){
+  const label=document.getElementById('mobileRecLabel'),name=document.getElementById('mobileRecName'),sub=document.getElementById('mobileRecSub'),btn=document.getElementById('mobileRecAction');
+  const hist=state.history[todayKey()];
+  let target='dayPicker';
+  if(hist){label.textContent='Prato de hoje';name.textContent=hist.recipe;sub.textContent='Concluído';target='recommendation'}
+  else if(!selectedChef()){label.textContent='Próxima etapa';name.textContent='Escolha o chef';sub.textContent='Etapa 2 de 5';target='chefDayBox'}
+  else if(!hasAnyStock()||!stockChecked()){label.textContent='Próxima etapa';name.textContent=hasAnyStock()?'Confirme o estoque':'Informe o estoque';sub.textContent='Etapa 3 de 5';target='stockSection'}
+  else if(!guildChecked()){label.textContent='Próxima etapa';name.textContent='Confira a guilda';sub.textContent='Etapa 4 de 5';target='guildCard'}
+  else{
+    const r=best();
+    label.textContent='Melhor prato';
+    name.textContent=r?r.name:'Nenhum disponível';
+    sub.textContent=r?`+${r.bonusPct}% · ${r.emblem.toLocaleString('pt-BR')} emblemas`:'Veja o que está faltando';
+    target='recommendation';
+  }
+  btn.onclick=()=>document.getElementById(target)?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
 function renderAllRecipes(){const q=norm(document.getElementById('search').value),t=document.getElementById('fType').value,rr=document.getElementById('fRarity').value,st=document.getElementById('fState').value;let list=RECIPES.filter(r=>{const hay=norm([r.name,r.nameEn,...r.ingredients].join(' '));return(!q||hay.includes(q))&&(!t||r.type===t)&&(!rr||r.rarity===rr)&&(!st||(st==='can'&&can(r))||(st==='new'&&!state.completed.includes(r.name))||(st==='done'&&state.completed.includes(r.name)))});document.getElementById('allRecipes').innerHTML=list.length?list.map(r=>recipeCard(r,true)).join(''):'<div class="small">Nenhuma receita encontrada.</div>';const done=state.completed.length;document.getElementById('progressMetrics').innerHTML=`<div class="metric"><strong>${done}/63</strong><span>receitas concluídas</span></div>${CATS.map(c=>`<div class="metric"><strong>${state.completed.filter(n=>RECIPES.find(r=>r.name===n)?.type===c).length}/21</strong><span>${c}</span></div>`).join('')}`}
 function renderIngredients(){document.getElementById('ingRows').innerHTML=ING.map(i=>{const n=RECIPES.filter(r=>r.ingredients.includes(i.name)).length;return `<tr><td><b>${esc(i.name)}</b><div class="small">${esc(i.nameEn)}</div></td><td class="rarity rar-${esc(i.rarity)}">${esc(i.rarity)}</td><td>${i.cost}</td><td>${esc(i.source)}</td><td>${esc(i.runeEffect)}</td><td>${n}</td></tr>`}).join('')}
 function renderHistory(){const keys=Object.keys(state.history).sort().reverse();document.getElementById('historyList').innerHTML=keys.length?keys.map(k=>{const h=state.history[k];return `<div class="hist"><div><b>${esc(h.recipe)}</b><small>${esc(k.split('-').reverse().join('/'))} · ${esc(h.category)} · +${h.bonusPct}%</small></div><span>${Number(h.emblem||0).toLocaleString('pt-BR')} 🏅</span></div>`}).join(''):'<div class="small">Nenhum prato lançado ainda.</div>'}
@@ -397,19 +553,20 @@ function renderAll(refreshInventory=true){
   document.getElementById('goal').value=state.goal;
   document.getElementById('autoDayText').innerHTML=`Seleção atual: <b>${dayType()}</b>. Use os três botões no topo para trocar rapidamente o dia da cozinha.`;
   if(refreshInventory)renderInventory();
-  renderGuild();renderRecommendation();renderTodayRecipes();renderNext();renderAllRecipes();renderHistory();bindDynamic()
+  renderGuild();renderRecommendation();renderTodayRecipes();renderNext();renderAllRecipes();renderHistory();renderFlowProgress();renderMobileBar();bindDynamic()
 }
 function markGuild(id){const r=RECIPES.find(x=>x.id===id),k=todayKey();state.guildByDate[k]=[...new Set([...(state.guildByDate[k]||[]),r.name])];save();renderAll(false)}
 function toggleDone(id){const r=RECIPES.find(x=>x.id===id);state.completed=state.completed.includes(r.name)?state.completed.filter(x=>x!==r.name):[...state.completed,r.name];save();renderAll(false)}
 function cook(id){if(isCookedToday())return;const r=RECIPES.find(x=>x.id===id);if(!r||!can(r)||guildToday().includes(r.name))return;if(!confirm(`Confirmar ${r.name} como seu único prato de hoje? O estoque será descontado automaticamente.`))return;const raw=rawCostFor(r);for(const [i,v] of Object.entries(raw))state.stock[i]=Math.max(0,(Number(state.stock[i])||0)-v);if(!state.completed.includes(r.name))state.completed.push(r.name);const k=todayKey();state.guildByDate[k]=[...new Set([...(state.guildByDate[k]||[]),r.name])];state.history[k]={recipe:r.name,recipeId:r.id,category:r.type,bonusPct:r.bonusPct,emblem:r.emblem,spent:raw};save();renderAll(true)}
 function undoCook(){const k=todayKey(),h=state.history[k];if(!h)return;if(!confirm('Desfazer o lançamento de hoje e devolver os ingredientes ao estoque?'))return;for(const [i,v] of Object.entries(h.spent||{}))state.stock[i]=(Number(state.stock[i])||0)+v;state.guildByDate[k]=(state.guildByDate[k]||[]).filter(x=>x!==h.recipe);delete state.history[k];save();renderAll(true)}
 function openDetails(id){const r=RECIPES.find(x=>x.id===id),m=missing(r),raw=rawCostFor(r);document.getElementById('modalTitle').textContent=r.name;document.getElementById('modalBody').innerHTML=`<div class="small">Original: ${esc(r.nameEn)}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill rarity rar-${esc(r.rarity)}">${esc(r.rarity)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="sep"></div><div class="sectionTitle">Receita perfeita</div><div>${esc(recipeText(r))}</div><div class="small" style="margin-top:5px">Custo bruto: ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="sep"></div><div class="sectionTitle">Com seu estoque</div>${can(r)?'<div class="pill ok">Dá para fazer agora</div>':m.map(x=>`<div class="target"><b>Falta ${x.raw} ${esc(x.name)}</b><div class="sourceLine">Onde buscar: ${esc(x.source)}</div></div>`).join('')}<div class="sep"></div><div class="sectionTitle">Ingredientes</div>${Object.entries(counts(r)).map(([i,n])=>`<div class="target"><b>${n}× ${esc(i)}</b><div class="sourceLine">${esc(ING_MAP[i].rarity)} · ${ING_MAP[i].cost}/seleção · ${esc(ING_MAP[i].source)}</div></div>`).join('')}`;document.getElementById('modal').classList.add('open')}
-function parseStockText(){const txt=norm(document.getElementById('pasteStock').value);let found=0;for(const i of ING){const aliases=[i.name,i.nameEn].map(norm);let v=null;for(const a of aliases){const re=new RegExp(a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:=-]?\\s*(\\d+)','i');const m=txt.match(re);if(m){v=Number(m[1]);break}}if(v!==null){state.stock[i.name]=v;found++}}if(!found)alert('Não consegui identificar ingredientes. Use algo como: Trigo 728, Carne 27, Leite 139.');save();renderAll(true)}
+function parseStockText(){const txt=norm(document.getElementById('pasteStock').value);let found=0;for(const i of ING){const aliases=[i.name,i.nameEn].map(norm);let v=null;for(const a of aliases){const re=new RegExp(a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[:=-]?\\s*(\\d+)','i');const m=txt.match(re);if(m){v=Number(m[1]);break}}if(v!==null){state.stock[i.name]=v;found++}}if(!found)alert('Não consegui identificar ingredientes. Use algo como: Trigo 728, Carne 27, Leite 139.');state.stockCheckedByDate[todayKey()]=false;save();renderAll(true)}
 function exportData(){const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`slayer-dv-backup-${todayKey()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function importData(file){const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);const n=o.state||o;state={...base,...n,stock:{...base.stock,...(n.stock||{})}};save();renderAll(true)}catch{alert('Backup inválido.')}};rd.readAsText(file)}
 // navegação
+document.querySelectorAll('[data-flow-target]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.flowTarget)?.scrollIntoView({behavior:'smooth',block:'center'}));
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
-document.getElementById('dayType').onchange=e=>{state.categoryOverride[todayKey()]=e.target.value;save();renderAll(false)};document.querySelectorAll('.day-btn').forEach(b=>b.onclick=()=>{state.categoryOverride[todayKey()]=b.dataset.cat;save();renderAll(false)});document.getElementById('goal').onchange=e=>{state.goal=e.target.value;save();renderAll(false)};document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);markGuild(r.id);e.target.value=''}};document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];save();renderAll(false)};document.getElementById('clearChef').onclick=()=>{delete state.selectedChefByDate[todayKey()];save();renderAll(true)};document.getElementById('clearStock').onclick=()=>{if(confirm('Zerar todo o estoque?')){state.stock={...base.stock};save();renderAll(true)}};document.getElementById('pasteToggle').onclick=()=>document.getElementById('quickPaste').classList.toggle('hidden');document.getElementById('parseStock').onclick=parseStockText;document.getElementById('lastShot').onclick=()=>{state.stock={...base.stock,'Trigo':728,'Carne':27,'Alface':168,'Leite':139,'Ovo':7,'Amendoim':20};save();renderAll(true)};document.getElementById('loadMyProgress').onclick=()=>{state.completed=[...new Set([...state.completed,'Sanduíche de Ovo','Cereais','Sukiyaki','Churrasco do Zeke'])];save();renderAll(false)};['search','fType','fRarity','fState'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{renderAllRecipes();bindDynamic()}));document.getElementById('exportData').onclick=exportData;document.getElementById('importData').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};
+document.getElementById('dayType').onchange=e=>{state.categoryOverride[todayKey()]=e.target.value;save();renderAll(false)};document.querySelectorAll('.day-btn').forEach(b=>b.onclick=()=>{state.categoryOverride[todayKey()]=b.dataset.cat;save();renderAll(false)});document.getElementById('goal').onchange=e=>{state.goal=e.target.value;save();renderAll(false)};document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);markGuild(r.id);e.target.value=''}};document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];save();renderAll(false)};document.getElementById('confirmGuild').onclick=()=>{state.guildCheckedByDate[todayKey()]=true;save();renderAll(false);document.getElementById('recommendation').scrollIntoView({behavior:'smooth',block:'center'})};document.getElementById('confirmStock').onclick=()=>{if(!hasAnyStock()){alert('Informe pelo menos um ingrediente antes de continuar.');return}state.stockCheckedByDate[todayKey()]=true;save();renderAll(false);document.getElementById('guildCard').scrollIntoView({behavior:'smooth',block:'center'})};document.getElementById('clearChef').onclick=()=>{delete state.selectedChefByDate[todayKey()];state.stockCheckedByDate[todayKey()]=false;save();renderAll(true)};document.getElementById('clearStock').onclick=()=>{if(confirm('Zerar todo o estoque?')){state.stock={...base.stock};state.stockCheckedByDate[todayKey()]=false;save();renderAll(true)}};document.getElementById('pasteToggle').onclick=()=>document.getElementById('quickPaste').classList.toggle('hidden');document.getElementById('parseStock').onclick=parseStockText;document.getElementById('lastShot').onclick=()=>{state.stock={...base.stock,'Trigo':728,'Carne':27,'Alface':168,'Leite':139,'Ovo':7,'Amendoim':20};state.stockCheckedByDate[todayKey()]=false;save();renderAll(true)};document.getElementById('loadMyProgress').onclick=()=>{state.completed=[...new Set([...state.completed,'Sanduíche de Ovo','Cereais','Sukiyaki','Churrasco do Zeke'])];save();renderAll(false)};['search','fType','fRarity','fState'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{renderAllRecipes();bindDynamic()}));document.getElementById('exportData').onclick=exportData;document.getElementById('importData').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};
 renderIngredients();renderAll(true);if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
   navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
     .then(reg=>reg.update())
