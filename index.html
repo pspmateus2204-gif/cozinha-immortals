@@ -133,7 +133,7 @@
       <p>Slayer Legend · Dragon Valley S5 · planejador diário</p>
     </div>
   </div>
-  <span class="version">interface V9 · receitas da comunidade</span>
+  <span class="version">interface V10 · receitas da comunidade</span>
   <div class="wt-note">PNC DA WT</div>
 </header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
 <nav class="tabs">
@@ -290,8 +290,27 @@ function candidates(cat=dayType()){const g=new Set(guildToday());return RECIPES.
 function best(){return isCookedToday()?null:candidates()[0]||null}
 function afterStock(r){const o={...state.stock};for(const [i,v] of Object.entries(rawCostFor(r)))o[i]=Math.max(0,(Number(o[i])||0)-v);return o}
 function why(r){const bits=[];if(!state.completed.includes(r.name))bits.push('receita nova para você');else bits.push('receita já concluída');bits.push(`bônus de +${r.bonusPct}%`);bits.push(`${r.emblem.toLocaleString('pt-BR')} emblemas`);if(scarcity(r)<2)bits.push('baixo impacto no seu estoque');return bits.join(' · ')}
-function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i.name)} sel.</b></div></div><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}
-function bindStockInputs(root){root.querySelectorAll('input[data-ing]').forEach(x=>x.oninput=()=>{state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);save();renderAll(true)})}
+function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i.name)} sel.</b></div></div><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}
+function refreshDecisionPanels(){
+  renderRecommendation();
+  renderTodayRecipes();
+  renderNext();
+  bindDynamic();
+}
+function bindStockInputs(root){
+  root.querySelectorAll('input[data-ing]').forEach(x=>{
+    x.oninput=()=>{
+      state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);
+      save();
+      // Atualiza apenas os cálculos, sem reconstruir o campo que está com foco.
+      refreshDecisionPanels();
+    };
+    x.onblur=()=>{
+      // Ao sair do campo, atualiza também os textos de "seleções disponíveis".
+      renderAll(true);
+    };
+  });
+}
 function renderInventory(){
   const regularNames=['Ovo','Trigo','Alface','Carne','Leite'];
   const chefNames=new Set(CHEFS.flatMap(c=>c.items));
@@ -304,7 +323,7 @@ function renderInventory(){
   chefBox.innerHTML=CHEFS.map(c=>{
     const isActive=active===c.name;
     const previews=c.items.map(n=>`<span>${esc(n)}</span>`).join('<span>•</span>');
-    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i.name)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
+    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i.name)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" enterkeyhint="done" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
     return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">${c.name==='Rosa'?'👩‍🍳':'👨‍🍳'} ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div><div class="chef-hint">${esc(c.desc)}<br>${isActive?'Chef selecionado — informe abaixo quanto possui de cada ingrediente.':'Clique no card para selecionar.'}</div>${inputs}</div>`;
   }).join('');
   chefBox.querySelectorAll('[data-chef]').forEach(card=>card.onclick=e=>{
