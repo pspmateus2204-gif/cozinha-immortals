@@ -18,3 +18,5 @@ V8: corrigido bug de renderização dos cards de ingredientes/chefs; cards dos 4
 V9: logo oficial da Immortals aplicado como identidade visual do site, ícone do app/PWA, favicon e imagem social.
 
 V10: correção de foco dos campos no celular; o teclado permanece aberto enquanto o usuário digita vários dígitos.
+
+V11: correção definitiva da digitação no celular. Os inputs não são mais reconstruídos durante input/change; service worker passou a usar HTML network-first para evitar versão antiga em cache.

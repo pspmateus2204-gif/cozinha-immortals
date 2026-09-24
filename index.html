@@ -119,6 +119,13 @@
   .brand-watermark{display:none}
 }
 
+
+/* V11 — digitação móvel estável */
+input[type="number"][data-ing]{
+  font-size:16px!important;
+  touch-action:manipulation;
+}
+
 </style>
 </head>
 <body>
@@ -133,7 +140,7 @@
       <p>Slayer Legend · Dragon Valley S5 · planejador diário</p>
     </div>
   </div>
-  <span class="version">interface V10 · receitas da comunidade</span>
+  <span class="version">interface V11 · receitas da comunidade</span>
   <div class="wt-note">PNC DA WT</div>
 </header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
 <nav class="tabs">
@@ -297,17 +304,33 @@ function refreshDecisionPanels(){
   renderNext();
   bindDynamic();
 }
+function updateSelectionLabel(input){
+  const name=input.dataset.ing;
+  const card=input.closest('.stock-card,.chef-mini');
+  if(!card)return;
+  const meta=card.querySelector('.stock-meta b, small');
+  if(!meta)return;
+  const ing=ING_MAP[name];
+  if(card.classList.contains('chef-mini')){
+    meta.textContent=`${ing.cost}/seleção · ${selections(name)} sel.`;
+  }else{
+    meta.textContent=`${selections(name)} sel.`;
+  }
+}
 function bindStockInputs(root){
   root.querySelectorAll('input[data-ing]').forEach(x=>{
+    // Durante a digitação: somente atualiza o estado e o pequeno contador local.
+    // Nenhum painel ou input é recriado, preservando o foco e o teclado do celular.
     x.oninput=()=>{
       state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);
       save();
-      // Atualiza apenas os cálculos, sem reconstruir o campo que está com foco.
-      refreshDecisionPanels();
+      updateSelectionLabel(x);
     };
-    x.onblur=()=>{
-      // Ao sair do campo, atualiza também os textos de "seleções disponíveis".
-      renderAll(true);
+    // Só recalcula a recomendação quando o usuário termina aquele campo.
+    x.onchange=()=>{
+      state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);
+      save();
+      refreshDecisionPanels();
     };
   });
 }
@@ -387,6 +410,10 @@ function importData(file){const rd=new FileReader();rd.onload=()=>{try{const o=J
 // navegação
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
 document.getElementById('dayType').onchange=e=>{state.categoryOverride[todayKey()]=e.target.value;save();renderAll(false)};document.querySelectorAll('.day-btn').forEach(b=>b.onclick=()=>{state.categoryOverride[todayKey()]=b.dataset.cat;save();renderAll(false)});document.getElementById('goal').onchange=e=>{state.goal=e.target.value;save();renderAll(false)};document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);markGuild(r.id);e.target.value=''}};document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];save();renderAll(false)};document.getElementById('clearChef').onclick=()=>{delete state.selectedChefByDate[todayKey()];save();renderAll(true)};document.getElementById('clearStock').onclick=()=>{if(confirm('Zerar todo o estoque?')){state.stock={...base.stock};save();renderAll(true)}};document.getElementById('pasteToggle').onclick=()=>document.getElementById('quickPaste').classList.toggle('hidden');document.getElementById('parseStock').onclick=parseStockText;document.getElementById('lastShot').onclick=()=>{state.stock={...base.stock,'Trigo':728,'Carne':27,'Alface':168,'Leite':139,'Ovo':7,'Amendoim':20};save();renderAll(true)};document.getElementById('loadMyProgress').onclick=()=>{state.completed=[...new Set([...state.completed,'Sanduíche de Ovo','Cereais','Sukiyaki','Churrasco do Zeke'])];save();renderAll(false)};['search','fType','fRarity','fState'].forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{renderAllRecipes();bindDynamic()}));document.getElementById('exportData').onclick=exportData;document.getElementById('importData').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);document.getElementById('closeModal').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};
-renderIngredients();renderAll(true);if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+renderIngredients();renderAll(true);if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
+    .then(reg=>reg.update())
+    .catch(()=>{});
+}
 </script>
 </body></html>
