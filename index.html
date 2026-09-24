@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1c120c">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="COZINHA DA IMMORTALS">
+<meta property="og:description" content="Ferramenta de receitas e planejamento diário do Dragon Valley - Slayer Legend">
+<meta property="og:image" content="immortals-logo.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="immortals-logo.jpg">
+
 <title>COZINHA DA IMMORTALS · Slayer Legend</title>
 <style>
 :root{--bg:#120c08;--panel:#22160e;--panel2:#2d1c11;--line:#5b3b1e;--gold:#dca62b;--gold2:#ffd46a;--ink:#fff5dd;--muted:#cbb995;--ok:#78d68b;--bad:#e98272;--blue:#87b9ff;--shadow:#0007;--common:#ddd;--great:#9ad48f;--rare:#efa24d;--epic:#c0a6ef;--legend:#ee9079;--mythic:#86baf4;--immortal:#ffd76b}
@@ -88,11 +96,46 @@
   .chef-day-title{align-items:flex-start;flex-direction:column}
 }
 
+
+/* V9 — identidade visual IMMORTALS */
+.hero{overflow:hidden}
+.hero-brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand-logo{
+  width:92px;height:92px;object-fit:cover;border-radius:16px;
+  border:2px solid #5a3211;box-shadow:0 5px 16px #0006,inset 0 0 0 2px #ffd66b55;
+  flex:0 0 auto
+}
+.hero-copy{min-width:0}
+.hero-copy h1{display:flex;align-items:center;gap:8px}
+.brand-watermark{
+  position:absolute;right:90px;top:50%;transform:translateY(-50%);
+  width:175px;height:175px;object-fit:cover;border-radius:50%;
+  opacity:.08;filter:saturate(.8) contrast(1.05);pointer-events:none
+}
+@media(max-width:720px){
+  .brand-logo{width:66px;height:66px;border-radius:12px}
+  .hero-brand{align-items:flex-start;gap:10px}
+  .hero-copy h1{font-size:25px}
+  .brand-watermark{display:none}
+}
+
 </style>
 </head>
 <body>
 <div class="app">
-<header class="hero"><div><div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div><h1>🍳 COZINHA DA IMMORTALS</h1><p>Slayer Legend · Dragon Valley S5 · planejador diário</p></div><span class="version">interface V7 · receitas da comunidade</span><div class="wt-note">PNC DA WT</div></header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
+<header class="hero">
+  <img class="brand-watermark" src="immortals-logo.jpg" alt="" aria-hidden="true">
+  <div class="hero-brand">
+    <img class="brand-logo" src="immortals-logo.jpg" alt="Logo Immortals Slayer Legend">
+    <div class="hero-copy">
+      <div class="leader-banner">VIVA NOSSO GRANDIOSO LIDER (HENRIQUE CASHER SAFADO)</div>
+      <h1>COZINHA DA IMMORTALS</h1>
+      <p>Slayer Legend · Dragon Valley S5 · planejador diário</p>
+    </div>
+  </div>
+  <span class="version">interface V9 · receitas da comunidade</span>
+  <div class="wt-note">PNC DA WT</div>
+</header><div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
 <nav class="tabs">
 <button class="tab active" data-tab="hoje">Hoje</button><button class="tab" data-tab="receitas">Receitas</button><button class="tab" data-tab="ingredientes">Ingredientes</button><button class="tab" data-tab="historico">Histórico</button><button class="tab" data-tab="fontes">Fontes</button>
 </nav>
@@ -223,10 +266,10 @@ function recipeText(r,raw=false){const c=counts(r);return Object.entries(c).map(
 function guildToday(){return state.guildByDate[todayKey()]||[]}
 function dayType(){return state.categoryOverride[todayKey()]||autoCategory()}
 const CHEFS=[
-  {name:'Cedric',label:'Chef Cedric',items:['Morango','Cana-de-açúcar']},
-  {name:'Rosa',label:'Chef Rosa',items:['Milho','Amendoim']},
-  {name:'Gene',label:'Chef Gene',items:['Camarão','Arroz']},
-  {name:'Arwen',label:'Chef Arwen',items:['Batata','Tomate']}
+  {name:'Cedric',label:'Chef Cedric',items:['Morango','Cana-de-açúcar'],desc:'Acesso aos ingredientes Morango e Cana-de-açúcar'},
+  {name:'Rosa',label:'Chef Rosa',items:['Milho','Amendoim'],desc:'Acesso aos ingredientes Milho e Amendoim'},
+  {name:'Gene',label:'Chef Gene',items:['Camarão','Arroz'],desc:'Acesso aos ingredientes Camarão e Arroz'},
+  {name:'Arwen',label:'Chef Arwen',items:['Batata','Tomate'],desc:'Acesso aos ingredientes Batata e Tomate'}
 ];
 const CHEF_ITEM_SOURCE=new Set(CHEFS.map(c=>c.name));
 function selectedChef(){return state.selectedChefByDate[todayKey()]||''}
@@ -247,7 +290,7 @@ function candidates(cat=dayType()){const g=new Set(guildToday());return RECIPES.
 function best(){return isCookedToday()?null:candidates()[0]||null}
 function afterStock(r){const o={...state.stock};for(const [i,v] of Object.entries(rawCostFor(r)))o[i]=Math.max(0,(Number(o[i])||0)-v);return o}
 function why(r){const bits=[];if(!state.completed.includes(r.name))bits.push('receita nova para você');else bits.push('receita já concluída');bits.push(`bônus de +${r.bonusPct}%`);bits.push(`${r.emblem.toLocaleString('pt-BR')} emblemas`);if(scarcity(r)<2)bits.push('baixo impacto no seu estoque');return bits.join(' · ')}
-function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i)} sel.</b></div></div><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}
+function stockInputCard(i,extraClass=''){return `<label class="stock-card ${extraClass}"><div><div class="stock-title">${esc(i.name)}</div><div class="stock-meta">${esc(i.rarity)} · ${i.cost}/seleção · <b>${selections(i.name)} sel.</b></div></div><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}
 function bindStockInputs(root){root.querySelectorAll('input[data-ing]').forEach(x=>x.oninput=()=>{state.stock[x.dataset.ing]=Math.max(0,Number(x.value)||0);save();renderAll(true)})}
 function renderInventory(){
   const regularNames=['Ovo','Trigo','Alface','Carne','Leite'];
@@ -261,8 +304,8 @@ function renderInventory(){
   chefBox.innerHTML=CHEFS.map(c=>{
     const isActive=active===c.name;
     const previews=c.items.map(n=>`<span>${esc(n)}</span>`).join('<span>•</span>');
-    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
-    return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">👨‍🍳 ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div><div class="chef-hint">${isActive?'Clique novamente nos campos abaixo para informar o estoque.':'Clique para selecionar este chef.'}</div>${inputs}</div>`;
+    const inputs=isActive?`<div class="chef-inputs">${c.items.map(n=>{const i=ING_MAP[n];return `<label class="chef-mini"><span>${esc(i.name)}</span><small>${i.cost}/seleção · ${selections(i.name)} sel.</small><input type="number" min="0" step="1" inputmode="numeric" data-ing="${esc(i.name)}" value="${Number(state.stock[i.name])||0}"></label>`}).join('')}</div><div class="chef-hint">Somente os ingredientes deste chef entram no cálculo dos pratos possíveis de hoje.</div>`:'';
+    return `<div class="chef-select ${isActive?'active':''}" data-chef="${esc(c.name)}"><div class="chef-head"><div class="chef-name">${c.name==='Rosa'?'👩‍🍳':'👨‍🍳'} ${esc(c.label)}</div><div class="chef-check">${isActive?'✓':''}</div></div><div class="chef-preview">${previews}</div><div class="chef-hint">${esc(c.desc)}<br>${isActive?'Chef selecionado — informe abaixo quanto possui de cada ingrediente.':'Clique no card para selecionar.'}</div>${inputs}</div>`;
   }).join('');
   chefBox.querySelectorAll('[data-chef]').forEach(card=>card.onclick=e=>{
     if(e.target.closest('input'))return;
@@ -280,7 +323,7 @@ function renderInventory(){
 }
 function renderGuild(){const cat=dayType(),g=guildToday();const sel=document.getElementById('guildAdd');sel.innerHTML='<option value="">Selecione...</option>'+RECIPES.filter(r=>r.type===cat&&!g.includes(r.name)).map(r=>`<option>${esc(r.name)}</option>`).join('');document.getElementById('guildChips').innerHTML=g.length?g.map(n=>`<span class="chip">${esc(n)} <button data-rm="${esc(n)}">×</button></span>`).join(''):'<span class="small">Nenhum prato informado.</span>';document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{state.guildByDate[todayKey()]=g.filter(x=>x!==b.dataset.rm);save();renderAll(false)})}
 function recipeCard(r,full=false){const ok=can(r),g=guildToday().includes(r.name),done=state.completed.includes(r.name),miss=missing(r);return `<div class="recipe ${ok?'can':''} ${g?'guild':''}"><div><h4>${esc(r.name)} <span class="rarity rar-${esc(r.rarity)}">· ${esc(r.rarity)}</span></h4><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill">${esc(r.type)}</span><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${done?'<span class="pill ok">Concluída</span>':''}${g?'<span class="pill bad">Guilda já fez hoje</span>':''}</div><div class="recipeActions">${full?`<button class="btn tiny" data-toggle-done="${r.id}">${done?'Desmarcar concluída':'Marcar concluída'}</button>`:''}<button class="btn tiny" data-details="${r.id}">Detalhes</button>${r.type===dayType()&&!g?`<button class="btn tiny" data-guild="${r.id}">Guilda já fez</button>`:''}${ok&&chefCompatible(r)&&r.type===dayType()&&!g&&!isCookedToday()?`<button class="btn primary tiny" data-cook="${r.id}">Cozinhei</button>`:''}</div></div><div class="right"><div class="status ${ok?'ok':'no'}">${g?'Ignorada hoje':ok?'Dá para fazer':'Faltam ingredientes'}</div>${!ok&&miss.length?`<div class="sub">${miss.map(x=>`${esc(x.name)}: ${x.raw}`).join('<br>')}</div>`:''}</div></div>`}
-function renderRecommendation(){const box=document.getElementById('recommendation');const hist=state.history[todayKey()];if(!selectedChef()&&!hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Antes de começar</div><div class="recname">Escolha o chef</div><div class="why">Selecione Cedric, Rosa, Gene ou Arwen para eu calcular os pratos realmente possíveis com os ingredientes daquele cozinheiro.</div></div>`;return}if(hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;document.getElementById('undoCook').onclick=undoCook;return}const r=best();if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Confira o estoque e os pratos que a guilda já fez hoje. A lista abaixo mostra o que está faltando.</div></div>`;return}const raw=rawCostFor(r),aft=afterStock(r);box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Repetida':'Nova'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`}
+function renderRecommendation(){const box=document.getElementById('recommendation');const hist=state.history[todayKey()];if(!selectedChef()&&!hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Antes de começar</div><div class="recname">Escolha o chef</div><div class="why">Selecione um dos quatro chefs logo acima. Cada chef libera dois ingredientes próprios e a recomendação é recalculada na hora.</div></div>`;return}if(hist){box.innerHTML=`<div class="recommend"><div class="eyebrow">Prato de hoje concluído</div><div class="recname">${esc(hist.recipe)}</div><div class="recipeLine">${esc(hist.category)} · ${hist.bonusPct?`+${hist.bonusPct}%`:''}</div><div class="why">O site bloqueia uma segunda receita no mesmo dia. <button class="btn bad tiny" id="undoCook" style="margin-left:6px">Desfazer lançamento</button></div></div>`;document.getElementById('undoCook').onclick=undoCook;return}const r=best();if(!r){box.innerHTML=`<div class="recommend"><div class="eyebrow">Sugestão de hoje</div><div class="recname">Nenhuma disponível</div><div class="why">Confira o estoque e os pratos que a guilda já fez hoje. A lista abaixo mostra o que está faltando.</div></div>`;return}const raw=rawCostFor(r),aft=afterStock(r);box.innerHTML=`<div class="recommend"><div class="eyebrow">Melhor opção de hoje</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ok">${state.completed.includes(r.name)?'Repetida':'Nova'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span></div><div class="why"><b>Por quê:</b> ${esc(why(r))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${i} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${aft[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div></div>`}
 function renderTodayRecipes(){
   const cat=dayType();
   const guild=guildToday();
