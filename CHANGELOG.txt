@@ -1,0 +1,27 @@
+COZINHA DA IMMORTALS — V15
+
+IMPLEMENTADO
+- motor estratégico de 3 dias com simulação de estoque;
+- recomendação de hoje baseada no plano do ciclo;
+- múltiplas receitas por dia (configurável);
+- migração automática do histórico V14 de 1 receita/dia para lista de receitas/dia;
+- chef passa a indicar fonte de reposição, sem bloquear estoque antigo de outros chefs;
+- todos os ingredientes de chef ficam editáveis no estoque;
+- objetivos: Resultado DV, Descobrir, Bônus, Emblemas, Economia e Sobras;
+- preservação elemental opcional: Pimenta, Atum, Manjericão e Cacau;
+- coordenação de guilda com pratos feitos + planejados + reserva de receitas;
+- copiar plano formatado para Discord;
+- calendário do ciclo configurável;
+- projeção de estoque após o plano;
+- código dividido em HTML/CSS/dados/JS;
+- PWA/cache V15 e headers Netlify.
+
+TESTES EXECUTADOS
+- inicialização sem erros JavaScript;
+- 63 receitas renderizadas;
+- 4 chefs renderizados;
+- plano com 3 dias renderizado;
+- estoque de ingrediente de outro chef permanece utilizável;
+- duas receitas no mesmo dia funcionam quando habilitado;
+- modo de uma receita/dia funciona quando desabilita múltiplas;
+- migração de histórico V14 validada.
