@@ -24,7 +24,7 @@ const ELEMENT_ING={fire:'Pimenta',water:'Atum',wind:'Manjericão',earth:'Cacau'}
 const base={
   stock:Object.fromEntries(ING.map(i=>[i.name,0])),
   completed:[],guildByDate:{},guildPlansByDate:{},history:{},categoryOverride:{},selectedChefByDate:{},stockCheckedByDate:{},guildCheckedByDate:{},
-  settings:{goal:'dv',elementPriority:'none',allowMultiple:true,useGuildPlans:true,cycleStart:'2026-09-22',cycleStartCategory:'Aperitivo'}
+  settings:{goal:'dv',elementPriority:'none',allowMultiple:true,useGuildPlans:true}
 };
 
 function clone(v){return JSON.parse(JSON.stringify(v))}
@@ -71,18 +71,33 @@ function fmtDate(k){return parseDateKey(k).toLocaleDateString('pt-BR',{day:'2-di
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}
 
 function autoCategoryFor(k=todayKey()){
-  const start=parseDateKey(state.settings.cycleStart||base.settings.cycleStart);start.setHours(0,0,0,0);
-  const d=parseDateKey(k);d.setHours(0,0,0,0);
-  const diff=Math.round((d-start)/86400000);
-  const baseIdx=Math.max(0,CATS.indexOf(state.settings.cycleStartCategory));
-  return CATS[(baseIdx+((diff%3)+3)%3)%3];
+  const dow=parseDateKey(k).getDay();
+  if(dow===2)return 'Aperitivo';
+  if(dow===3)return 'Prato principal';
+  if(dow===4)return 'Sobremesa';
+  return null;
 }
 function dayType(k=todayKey()){return state.categoryOverride[k]||autoCategoryFor(k)}
+function cookingDatesFromToday(){
+  const start=parseDateKey(todayKey()),dow=start.getDay(),dates=[];
+  if(dow>=2&&dow<=4){
+    for(let d=dow;d<=4;d++)dates.push(addDaysKey(todayKey(),d-dow));
+    return dates;
+  }
+  let delta=(2-dow+7)%7;
+  if(delta===0)delta=7;
+  const tue=addDaysKey(todayKey(),delta);
+  return [tue,addDaysKey(tue,1),addDaysKey(tue,2)];
+}
+function nextCookingInfo(){
+  const dates=cookingDatesFromToday(),k=dates[0];
+  return {date:k,category:autoCategoryFor(k)};
+}
 function selectedChef(k=todayKey()){return state.selectedChefByDate[k]||''}
 function stockChecked(k=todayKey()){return !!state.stockCheckedByDate[k]}
 function guildChecked(k=todayKey()){return !!state.guildCheckedByDate[k]}
 function hasAnyStock(stock=state.stock){return ING.some(i=>(Number(stock[i.name])||0)>0)}
-function flowReady(){return !!selectedChef()&&hasAnyStock()&&stockChecked()&&guildChecked()}
+function flowReady(){return !!dayType()&&!!selectedChef()&&hasAnyStock()&&stockChecked()&&guildChecked()}
 
 function counts(r){const o={};for(const i of r.ingredients)o[i]=(o[i]||0)+1;return o}
 function selections(name,stock=state.stock){const i=ING_MAP[name];return i?Math.floor((Number(stock[name])||0)/i.cost):0}
@@ -100,7 +115,7 @@ function reservedRecipes(k=todayKey()){
   if(state.settings.useGuildPlans)for(const p of guildPlans(k))if(p.recipe)set.add(p.recipe);
   return set;
 }
-function currentFlowStep(){if(!selectedChef())return 2;if(!hasAnyStock()||!stockChecked())return 3;if(!guildChecked())return 4;return 5}
+function currentFlowStep(){if(!dayType())return 1;if(!selectedChef())return 2;if(!hasAnyStock()||!stockChecked())return 3;if(!guildChecked())return 4;return 5}
 
 function scarcity(r,stock=state.stock){
   let s=0;
@@ -134,7 +149,7 @@ function eligibleRecipes(k,stock=state.stock){
 function immediateCandidates(k=todayKey(),stock=state.stock){return eligibleRecipes(k,stock).sort((a,b)=>recipeUtility(b,stock)-recipeUtility(a,stock)||b.bonusPct-a.bonusPct||a.id-b.id)}
 
 function buildCyclePlan(){
-  const dates=[todayKey(),addDaysKey(todayKey(),1),addDaysKey(todayKey(),2)];
+  const dates=cookingDatesFromToday();
   let best={score:-Infinity,steps:[],finalStock:{...state.stock}};
   const recur=(idx,stock,steps,score)=>{
     if(idx===dates.length){if(score>best.score)best={score,steps:clone(steps),finalStock:{...stock}};return}
@@ -154,7 +169,7 @@ function buildCyclePlan(){
   best.totalRecipes=best.steps.filter(x=>x.recipe).length;
   return best;
 }
-function planBestForToday(){return buildCyclePlan().steps[0]?.recipe||null}
+function planBestForToday(){return buildCyclePlan().steps.find(s=>s.date===todayKey())?.recipe||null}
 function missingScore(r,stock=state.stock){return missingWithStock(r,stock).reduce((s,x)=>s+(rarityWeight[ING_MAP[x.name].rarity]||1)*Math.max(1,x.raw/ING_MAP[x.name].cost),0)}
 function sourceTip(m){
   if(m.source===selectedChef())return `${m.source} hoje`;
@@ -167,7 +182,7 @@ function why(r,plan){
   bits.push(`+${r.bonusPct}% ${r.effect}`);
   bits.push(`${r.emblem.toLocaleString('pt-BR')} emblemas`);
   const immediate=immediateCandidates()[0];
-  if(immediate&&immediate.id!==r.id)bits.push('escolhida pelo plano de 3 dias para preservar opções futuras');
+  if(immediate&&immediate.id!==r.id)bits.push('escolhida pelo plano do ciclo para preservar opções futuras');
   const el=ELEMENT_ING[state.settings.elementPriority];
   if(el&&!r.ingredients.includes(el))bits.push(`preserva ${el}`);
   if(scarcity(r)<2)bits.push('baixo impacto no estoque');
@@ -202,10 +217,10 @@ function renderInventory(){
 
 function renderGuild(){
   const k=todayKey(),cat=dayType(),done=guildDone(k),plans=guildPlans(k);
-  const sel=document.getElementById('guildAdd');sel.innerHTML='<option value="">Selecione...</option>'+RECIPES.filter(r=>r.type===cat&&!done.includes(r.name)).map(r=>`<option>${esc(r.name)}</option>`).join('');
+  const sel=document.getElementById('guildAdd');sel.innerHTML=cat?'<option value="">Selecione...</option>'+RECIPES.filter(r=>r.type===cat&&!done.includes(r.name)).map(r=>`<option>${esc(r.name)}</option>`).join(''):'<option value="">Sem cozinha hoje</option>';sel.disabled=!cat;
   document.getElementById('guildChips').innerHTML=done.length?done.map(n=>`<span class="chip">${esc(n)} <button data-rm-guild="${esc(n)}">×</button></span>`).join(''):'<span class="small">Nenhum prato feito informado.</span>';
   document.querySelectorAll('[data-rm-guild]').forEach(b=>b.onclick=()=>{state.guildByDate[k]=done.filter(x=>x!==b.dataset.rmGuild);save();renderGuild();refreshDecisionPanels()});
-  const ps=document.getElementById('guildPlanRecipe');ps.innerHTML='<option value="">Prato...</option>'+RECIPES.filter(r=>r.type===cat).map(r=>`<option>${esc(r.name)}</option>`).join('');
+  const ps=document.getElementById('guildPlanRecipe');ps.innerHTML=cat?'<option value="">Prato...</option>'+RECIPES.filter(r=>r.type===cat).map(r=>`<option>${esc(r.name)}</option>`).join(''):'<option value="">Sem cozinha hoje</option>';ps.disabled=!cat;
   document.getElementById('guildPlanList').innerHTML=plans.length?plans.map((p,i)=>`<div class="guild-plan-item ${p.done?'done':''}"><input type="checkbox" data-plan-done="${i}" ${p.done?'checked':''}><div><b>${esc(p.member||'Membro')}</b><small>${esc(p.recipe)}${p.done?' · feito':' · planejado'}</small></div><button class="icon-btn" data-plan-rm="${i}" title="Remover">×</button></div>`).join(''):'<div class="small">Nenhum prato planejado.</div>';
   document.querySelectorAll('[data-plan-done]').forEach(x=>x.onchange=()=>{plans[Number(x.dataset.planDone)].done=x.checked;state.guildPlansByDate[k]=plans;save();renderGuild();refreshDecisionPanels()});
   document.querySelectorAll('[data-plan-rm]').forEach(x=>x.onclick=()=>{plans.splice(Number(x.dataset.planRm),1);state.guildPlansByDate[k]=plans;save();renderGuild();refreshDecisionPanels()});
@@ -215,7 +230,7 @@ function addGuildPlan(){
   const k=todayKey();state.guildPlansByDate[k]=[...(state.guildPlansByDate[k]||[]),{member,recipe,done:false}];state.guildCheckedByDate[k]=false;save();document.getElementById('guildMember').value='';document.getElementById('guildPlanRecipe').value='';renderGuild();refreshDecisionPanels();
 }
 async function copyDiscord(){
-  const k=todayKey(),plans=guildPlans(k),done=guildDone(k);let txt=`DRAGON VALLEY — ${fmtDate(k)} — ${dayType(k).toUpperCase()}\n`;
+  const k=todayKey(),plans=guildPlans(k),done=guildDone(k),cat=dayType(k)||'Sem cozinha';let txt=`DRAGON VALLEY — ${fmtDate(k)} — ${cat.toUpperCase()}\n`;
   if(plans.length){txt+=plans.map(p=>`${p.done?'✅':'🟡'} ${p.member} → ${p.recipe}`).join('\n')+'\n'}
   if(done.length)txt+=`\nJá feitos: ${done.join(' / ')}\n`;
   const my=cookedFor(k);if(my.length)txt+=`Meu(s) prato(s): ${my.map(x=>x.recipe).join(' / ')}\n`;
@@ -228,22 +243,28 @@ function renderTodayCooks(){
 }
 function renderRecommendation(){
   const box=document.getElementById('recommendation');
+  if(!dayType()){
+    const n=nextCookingInfo();
+    box.innerHTML=`<div class="recommend"><div class="eyebrow">Calendário Dragon Valley</div><div class="recname">Hoje não tem cozinha</div><div class="why">Calendário fixo: terça = Aperitivo, quarta = Prato principal, quinta = Sobremesa.<br>Próxima cozinha: <b>${fmtDate(n.date)} · ${esc(n.category)}</b>.</div></div>`;
+    return;
+  }
   if(!selectedChef()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 2 de 5</div><div class="recname">Escolha o chef</div><div class="why">O chef define a fonte de reposição do dia; ele não bloqueia ingredientes que já estão no estoque.</div>${renderTodayCooks()}</div>`;return}
   if(!hasAnyStock()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 3 de 5</div><div class="recname">Informe o estoque</div><div class="why">Preencha os ingredientes que já possui.</div>${renderTodayCooks()}</div>`;return}
   if(!stockChecked()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 3 de 5</div><div class="recname">Confirme o estoque</div><div class="why">Quando terminar os valores, toque em <b>Estoque preenchido — continuar</b>.</div>${renderTodayCooks()}</div>`;return}
   if(!guildChecked()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Etapa 4 de 5</div><div class="recname">Confira a guilda</div><div class="why">Informe pratos feitos/planejados para evitar duplicação e confirme.</div>${renderTodayCooks()}</div>`;return}
   if(!canCookMoreOn()){box.innerHTML=`<div class="recommend"><div class="eyebrow">Limite configurado</div><div class="recname">Dia encerrado</div><div class="why">A opção de múltiplas receitas está desligada e já existe um prato lançado hoje. Ative-a em Estratégia para continuar.</div>${renderTodayCooks()}</div>`;bindDynamic();return}
-  const plan=buildCyclePlan(),r=plan.steps[0]?.recipe;
+  const plan=buildCyclePlan(),r=plan.steps.find(s=>s.date===todayKey())?.recipe;
   if(!r){
     const has=eligibleRecipes(todayKey(),state.stock).length>0;
     box.innerHTML=`<div class="recommend"><div class="eyebrow">Estratégia do ciclo</div><div class="recname">${has?'Poupar hoje':'Nenhuma disponível'}</div><div class="why">${has?'Com o objetivo atual, guardar os ingredientes produz um plano melhor para os próximos dias.':'Nenhuma receita perfeita disponível com o estoque e reservas atuais.'}</div>${renderTodayCooks()}</div>`;bindDynamic();return;
   }
   const raw=rawCostFor(r),after=consumeStock(state.stock,r),cooks=cookedFor().length;
-  box.innerHTML=`<div class="recommend"><div class="eyebrow">${cooks?'Próxima melhor receita':'Melhor opção de hoje'}</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ${state.completed.includes(r.name)?'':'ok'}">${state.completed.includes(r.name)?'Já desbloqueada':'Nova para você'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span><span class="pill blue">Plano 3 dias</span></div><div class="why"><b>Por quê:</b> ${esc(why(r,plan))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${esc(i)} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${after[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div>${renderTodayCooks()}</div>`;
+  box.innerHTML=`<div class="recommend"><div class="eyebrow">${cooks?'Próxima melhor receita':'Melhor opção de hoje'}</div><div class="recname">${esc(r.name)}</div><div class="recipeLine">${esc(recipeText(r))}</div><div class="pills"><span class="pill ${state.completed.includes(r.name)?'':'ok'}">${state.completed.includes(r.name)?'Já desbloqueada':'Nova para você'}</span><span class="pill gold">+${r.bonusPct}% ${esc(r.effect)}</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span><span class="pill blue">Plano do ciclo</span></div><div class="why"><b>Por quê:</b> ${esc(why(r,plan))}.<br><b>Custo real:</b> ${Object.entries(raw).map(([i,v])=>`${esc(i)} ${v}`).join(' · ')}</div><div class="after">${Object.keys(raw).map(i=>`<div class="delta"><b>${esc(i)}</b>${Number(state.stock[i])||0} → ${after[i]}</div>`).join('')}</div><div class="row" style="margin-top:11px"><button class="btn primary" data-cook="${r.id}">Cozinhei este prato</button><button class="btn" data-details="${r.id}">Ver detalhes</button></div>${renderTodayCooks()}</div>`;
   bindDynamic();
 }
 function renderTodayRecipes(){
   const el=document.getElementById('todayRecipes');
+  if(!dayType()){document.getElementById('candidateCount').textContent='';el.innerHTML='<div class="flow-lock">Hoje não há cozinha. Terça = Aperitivo, quarta = Prato principal, quinta = Sobremesa.</div>';return}
   if(!flowReady()){document.getElementById('candidateCount').textContent='';el.innerHTML='<div class="flow-lock">Conclua Chef, Estoque e Guilda para liberar as opções.</div>';return}
   const list=immediateCandidates();document.getElementById('candidateCount').textContent=`${list.length} possível(is)`;
   if(list.length){el.innerHTML=list.map(r=>`<div class="possible-item"><b>${esc(r.name)}</b><div class="sub">${esc(recipeText(r))}</div><div class="pills"><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${state.completed.includes(r.name)?'<span class="pill">Já feita</span>':'<span class="pill ok">Nova</span>'}</div><div class="recipeActions"><button class="btn tiny" data-details="${r.id}">Detalhes</button><button class="btn primary tiny" data-cook="${r.id}">Cozinhar</button></div></div>`).join('');bindDynamic();return}
@@ -253,7 +274,7 @@ function renderTodayRecipes(){
 }
 
 function stepHtml(step,i,full=false){
-  const r=step.recipe,today=i===0;
+  const r=step.recipe,today=step.date===todayKey();
   if(!r)return `<div class="plan-day ${today?'today':''}"><div class="plan-head"><strong>${fmtDate(step.date)} · ${esc(step.category)}</strong><span class="pill">Dia ${i+1}</span></div><div class="plan-recipe">Guardar ingredientes</div><small>Sem receita-alvo no plano com o objetivo atual.</small></div>`;
   const spent=rawCostFor(r);
   return `<div class="plan-day ${today?'today':''}"><div class="plan-head"><strong>${fmtDate(step.date)} · ${esc(step.category)}</strong><span class="pill ${today?'gold':''}">Dia ${i+1}</span></div><div class="plan-recipe">${esc(r.name)}</div><div class="pills"><span class="pill gold">+${r.bonusPct}%</span><span class="pill">${r.emblem.toLocaleString('pt-BR')} emblemas</span>${state.completed.includes(r.name)?'<span class="pill">já conhecida</span>':'<span class="pill ok">nova</span>'}</div>${full?`<div class="plan-score">Consumo: ${Object.entries(spent).map(([k,v])=>`${esc(k)} ${v}`).join(' · ')}</div>`:''}</div>`;
@@ -287,7 +308,7 @@ function renderHistory(){
 }
 function renderFlowProgress(){
   const step=currentFlowStep(),cooks=cookedFor().length;
-  document.getElementById('flowDay').textContent=dayType();document.getElementById('flowChef').textContent=selectedChef()?`Chef ${selectedChef()}`:'pendente';document.getElementById('flowStock').textContent=stockChecked()?'confirmado':hasAnyStock()?'confirmar':'pendente';document.getElementById('flowGuild').textContent=guildChecked()?`${reservedRecipes().size} reservado(s)`:'pendente';document.getElementById('flowResult').textContent=cooks?`${cooks} cozido(s)`:flowReady()?'liberado':'bloqueado';
+  document.getElementById('flowDay').textContent=dayType()||'Sem cozinha';document.getElementById('flowChef').textContent=selectedChef()?`Chef ${selectedChef()}`:'pendente';document.getElementById('flowStock').textContent=stockChecked()?'confirmado':hasAnyStock()?'confirmar':'pendente';document.getElementById('flowGuild').textContent=guildChecked()?`${reservedRecipes().size} reservado(s)`:'pendente';document.getElementById('flowResult').textContent=cooks?`${cooks} cozido(s)`:flowReady()?'liberado':'bloqueado';
   document.querySelectorAll('.flow-step').forEach((el,i)=>{const n=i+1;el.classList.toggle('done',n<step||(n===3&&stockChecked())||(n===4&&guildChecked())||cooks>0);el.classList.toggle('current',n===step&&cooks===0);el.classList.toggle('locked',n>step&&cooks===0)});
   const ss=document.getElementById('stockConfirmStatus');ss.textContent=stockChecked()?'Estoque confirmado. Se alterar algum valor, confirme novamente.':'Confirme quando terminar de informar os ingredientes.';ss.classList.toggle('ok',stockChecked());
   const gs=document.getElementById('guildConfirmStatus');gs.textContent=guildChecked()?'Guilda conferida para hoje.':'Adicione os pratos feitos/planejados ou confirme que não há outros.';gs.classList.toggle('ok',guildChecked());
@@ -295,7 +316,8 @@ function renderFlowProgress(){
 }
 function renderMobileBar(){
   const label=document.getElementById('mobileRecLabel'),name=document.getElementById('mobileRecName'),sub=document.getElementById('mobileRecSub'),btn=document.getElementById('mobileRecAction');let target='dayPicker';
-  if(!selectedChef()){label.textContent='Próxima etapa';name.textContent='Escolha o chef';sub.textContent='Etapa 2 de 5';target='chefDayBox'}
+  if(!dayType()){const n=nextCookingInfo();label.textContent='Sem cozinha hoje';name.textContent='Próxima: '+n.category;sub.textContent=fmtDate(n.date)+' · terça/quarta/quinta fixos';target='dayPicker'}
+  else if(!selectedChef()){label.textContent='Próxima etapa';name.textContent='Escolha o chef';sub.textContent='Etapa 2 de 5';target='chefDayBox'}
   else if(!hasAnyStock()||!stockChecked()){label.textContent='Próxima etapa';name.textContent=hasAnyStock()?'Confirme o estoque':'Informe o estoque';sub.textContent='Etapa 3 de 5';target='stockSection'}
   else if(!guildChecked()){label.textContent='Próxima etapa';name.textContent='Confira a guilda';sub.textContent='Etapa 4 de 5';target='guildCard'}
   else if(!canCookMoreOn()){label.textContent='Dia encerrado';name.textContent=cookedFor().map(x=>x.recipe).join(' / ');sub.textContent='Múltiplas receitas desativadas';target='recommendation'}
@@ -304,12 +326,14 @@ function renderMobileBar(){
 }
 
 function renderSettings(){
-  document.getElementById('goal').value=state.settings.goal;document.getElementById('elementPriority').value=state.settings.elementPriority;document.getElementById('allowMultiple').checked=!!state.settings.allowMultiple;document.getElementById('useGuildPlans').checked=!!state.settings.useGuildPlans;document.getElementById('cycleStart').value=state.settings.cycleStart;document.getElementById('cycleStartCategory').value=state.settings.cycleStartCategory;
-  const over=state.categoryOverride[todayKey()];document.getElementById('dayCaption').innerHTML=over?`Hoje está em modo manual: <b>${esc(over)}</b>. Automático seria ${esc(autoCategoryFor())}.`:`Dia automático: <b>${esc(autoCategoryFor())}</b> · ciclo iniciado em ${state.settings.cycleStart.split('-').reverse().join('/')}.`;
-  document.getElementById('autoDayText').innerHTML=`O plano considera hoje + 2 dias. ${state.settings.elementPriority!=='none'?`Preservação elemental ativa: <b>${esc(ELEMENT_ING[state.settings.elementPriority])}</b>.`:'Sem preservação elemental.'}`;
+  document.getElementById('goal').value=state.settings.goal;document.getElementById('elementPriority').value=state.settings.elementPriority;document.getElementById('allowMultiple').checked=!!state.settings.allowMultiple;document.getElementById('useGuildPlans').checked=!!state.settings.useGuildPlans;
+  const over=state.categoryOverride[todayKey()],auto=autoCategoryFor();
+  document.getElementById('dayCaption').innerHTML=over?`Hoje está em modo manual: <b>${esc(over)}</b>. ${auto?`Automático seria ${esc(auto)}.`:'Hoje não é um dia automático de cozinha.'}`:auto?`Calendário automático: <b>${esc(auto)}</b>.`:'Hoje não há cozinha automática. Próximo ciclo começa na terça com Aperitivo.';
+  const qtd=cookingDatesFromToday().length;
+  document.getElementById('autoDayText').innerHTML=`Calendário fixo: <b>terça = Aperitivo · quarta = Prato principal · quinta = Sobremesa</b>. O plano mostra ${qtd} dia(s) restante(s)/próximo(s) de cozinha. ${state.settings.elementPriority!=='none'?`Preservação elemental ativa: <b>${esc(ELEMENT_ING[state.settings.elementPriority])}</b>.`:'Sem preservação elemental.'}`;
 }
 function renderAll(refreshInventory=true){
-  document.getElementById('dayType').value=dayType();document.querySelectorAll('.day-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===dayType()));
+  document.getElementById('dayType').value=dayType()||'';document.querySelectorAll('.day-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===dayType()));
   renderSettings();if(refreshInventory)renderInventory();renderGuild();renderRecommendation();renderTodayRecipes();renderCyclePlan();renderAllRecipes();renderHistory();renderFlowProgress();renderMobileBar();bindDynamic();
 }
 
@@ -357,8 +381,6 @@ document.getElementById('goal').onchange=e=>{state.settings.goal=e.target.value;
 document.getElementById('elementPriority').onchange=e=>{state.settings.elementPriority=e.target.value;save();refreshDecisionPanels();renderSettings()};
 document.getElementById('allowMultiple').onchange=e=>{state.settings.allowMultiple=e.target.checked;save();refreshDecisionPanels();renderSettings()};
 document.getElementById('useGuildPlans').onchange=e=>{state.settings.useGuildPlans=e.target.checked;save();refreshDecisionPanels();renderSettings()};
-document.getElementById('cycleStart').onchange=e=>{if(e.target.value)state.settings.cycleStart=e.target.value;save();renderAll(false)};
-document.getElementById('cycleStartCategory').onchange=e=>{state.settings.cycleStartCategory=e.target.value;save();renderAll(false)};
 document.getElementById('guildAdd').onchange=e=>{if(e.target.value){const r=RECIPES.find(x=>x.name===e.target.value);if(r)markGuild(r.id);e.target.value=''}};
 document.getElementById('clearGuild').onclick=()=>{state.guildByDate[todayKey()]=[];state.guildCheckedByDate[todayKey()]=false;save();renderGuild();refreshDecisionPanels()};
 document.getElementById('addGuildPlan').onclick=addGuildPlan;document.getElementById('copyDiscord').onclick=copyDiscord;
