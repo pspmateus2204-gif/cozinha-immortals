@@ -37,7 +37,7 @@
 
 <nav class="tabs">
   <button class="tab active" data-tab="hoje">Hoje</button>
-  <button class="tab" data-tab="plano">Plano 3 dias</button>
+  <button class="tab" data-tab="plano">Plano do ciclo</button>
   <button class="tab" data-tab="receitas">Receitas</button>
   <button class="tab" data-tab="ingredientes">Ingredientes</button>
   <button class="tab" data-tab="historico">Histórico</button>
@@ -175,20 +175,10 @@
 <section id="plano" class="panel">
   <div class="plan-layout">
     <div class="card">
-      <div class="head"><h2>Plano estratégico de 3 dias</h2><span class="small" id="planSummary"></span></div>
+      <div class="head"><h2>Plano do ciclo atual</h2><span class="small" id="planSummary"></span></div>
       <div class="body">
-        <div class="callout">O plano usa o estoque atual e escolhe <b>uma receita-alvo principal por dia</b>. Receitas extras continuam disponíveis no dia atual quando a opção de múltiplas receitas estiver ativa.</div>
+        <div class="callout">Calendário fixo do Dragon Valley: <b>terça = Aperitivo, quarta = Prato principal, quinta = Sobremesa</b>. O plano mostra apenas os dias restantes do ciclo atual; fora desses dias, mostra o próximo ciclo.</div>
         <div id="cyclePlan" class="cycle-plan"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="head"><h2>Configuração do ciclo</h2></div>
-      <div class="body settings-grid">
-        <label class="lbl">Data de início do ciclo<input id="cycleStart" type="date"></label>
-        <label class="lbl">Categoria no início
-          <select id="cycleStartCategory"><option>Aperitivo</option><option>Prato principal</option><option>Sobremesa</option></select>
-        </label>
-        <div class="callout wide">O calendário automático gira as três categorias a partir dessa data. Você ainda pode sobrescrever manualmente o dia na aba “Hoje”.</div>
       </div>
     </div>
     <div class="card">
