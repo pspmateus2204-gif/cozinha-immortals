@@ -53,12 +53,20 @@ function normalizeState(raw={}){
   return s;
 }
 let state;
+let storageWritable=true;
 try{
   const current=JSON.parse(localStorage.getItem(KEY)||'null');
   const old=current?null:JSON.parse(localStorage.getItem(OLD_KEY)||'null');
   state=normalizeState(current||old||{});
-}catch{state=normalizeState({})}
-function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+}catch{
+  storageWritable=false;
+  state=normalizeState({});
+}
+function save(){
+  if(!storageWritable)return false;
+  try{localStorage.setItem(KEY,JSON.stringify(state));return true}
+  catch{storageWritable=false;return false}
+}
 save();
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -335,6 +343,7 @@ function renderSettings(){
 function renderAll(refreshInventory=true){
   document.getElementById('dayType').value=dayType()||'';document.querySelectorAll('.day-btn').forEach(b=>b.classList.toggle('active',b.dataset.cat===dayType()));
   renderSettings();if(refreshInventory)renderInventory();renderGuild();renderRecommendation();renderTodayRecipes();renderCyclePlan();renderAllRecipes();renderHistory();renderFlowProgress();renderMobileBar();bindDynamic();
+  document.getElementById('storageWarning')?.classList.toggle('hidden',storageWritable);
 }
 
 function markGuild(id){const r=RECIPES.find(x=>x.id===id),k=todayKey();if(!r)return;state.guildByDate[k]=[...new Set([...(state.guildByDate[k]||[]),r.name])];state.guildCheckedByDate[k]=false;save();renderGuild();refreshDecisionPanels()}
