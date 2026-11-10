@@ -8,15 +8,15 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=15.1">
 <meta property="og:title" content="COZINHA DA IMMORTALS">
 <meta property="og:description" content="Planejador estratégico de receitas do Dragon Valley - Slayer Legend">
 <meta property="og:image" content="immortals-logo.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="immortals-logo.jpg">
 <title>COZINHA DA IMMORTALS · Slayer Legend</title>
-<script src="recipes.js" defer></script>
-<script src="app.js" defer></script>
+<script src="recipes.js?v=15.1" defer></script>
+<script src="app.js?v=15.1" defer></script>
 </head>
 <body>
 <div class="app">
@@ -30,7 +30,7 @@
       <p>Slayer Legend · Dragon Valley S5 · planejador estratégico</p>
     </div>
   </div>
-  <span class="version">V15 · CICLO 3 DIAS</span>
+  <span class="version">V15.1 · CICLO 3 DIAS</span>
   <div class="wt-note">PNC DA WT</div>
 </header>
 <div class="haxxi-note">HAXXI NÃO BOBEIA COM O CELULAR</div>
@@ -85,6 +85,7 @@
           <label class="lbl">Cole algo como “Trigo 728, Carne 27, Leite 139...”<textarea id="pasteStock" rows="3" placeholder="Trigo 728, Carne 27, Alface 168..."></textarea></label>
           <div class="quick-actions"><button class="btn primary tiny" id="parseStock">Interpretar</button></div>
         </div>
+        <div id="storageWarning" class="callout hidden" role="alert">O navegador bloqueou o armazenamento local. Você pode preencher ingredientes nesta sessão, mas as alterações não serão salvas ao fechar a página.</div>
         <div id="regularInventory" class="regular-grid"></div>
       </section>
 
@@ -239,5 +240,30 @@
 
 <div id="modal" class="modal"><div class="sheet"><div class="row" style="justify-content:space-between"><h3 id="modalTitle">Detalhes</h3><button class="btn tiny" id="closeModal">Fechar</button></div><div id="modalBody"></div></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+window.addEventListener('load',()=>{
+  if(document.querySelector('#chefInventory [data-chef]')&&document.querySelector('#regularInventory input[data-ing]'))return;
+  const host=document.getElementById('chefDayBox');
+  if(!host)return;
+  const notice=document.createElement('div');
+  notice.className='callout';
+  notice.setAttribute('role','alert');
+  notice.innerHTML='<b>Falha ao carregar os chefs ou os ingredientes.</b> Os arquivos do aplicativo podem estar desatualizados no cache. <button type="button" class="btn primary tiny" id="reloadAssets">Recarregar arquivos</button>';
+  host.prepend(notice);
+  document.getElementById('reloadAssets').onclick=async()=>{
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.filter(r=>r.scope.startsWith(location.origin+'/')).map(r=>r.unregister()));
+      }
+      if('caches' in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.filter(k=>/^cozinha-immortals-v\\d+$/.test(k)).map(k=>caches.delete(k)));
+      }
+    }catch(e){}
+    location.reload();
+  };
+});
+</script>
 </body>
 </html>
