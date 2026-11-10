@@ -10,7 +10,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
   const url=new URL(req.url);
-  if(url.origin===self.location.origin && /\\.(?:js|css)$/.test(url.pathname)){
+  if(url.origin===self.location.origin && /\.(?:js|css)$/.test(url.pathname)){
     event.respondWith(fetch(req,{cache:'no-store'}).then(res=>{
       if(res.ok){const copy=res.clone();caches.open(CACHE).then(cache=>cache.put(req,copy)).catch(()=>{})}
       return res;
